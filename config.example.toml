@@ -1,0 +1,20 @@
+[source]
+# Path to your main storage (HDD) - Update this path!
+path = "D:/MainStorage"
+
+[rules]
+# Define file extensions for each category
+images = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "ico", "tiff", "tif", "heic", "raw"]
+videos = ["mp4", "avi", "mov", "mkv", "flv", "wmv", "webm", "m4v", "mpg", "mpeg", "3gp"]
+music = ["mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus", "alac"]
+documents = ["pdf", "doc", "docx", "txt", "rtf", "odt", "xlsx", "xls", "pptx", "ppt", "csv"]
+archives = ["zip", "rar", "7z", "tar", "gz", "bz2", "xz", "iso"]
+
+[drives]
+# Example drive configuration (add your drives using: file-orchestrator register-drive)
+# "uuid-string" = { label = "DriveName", target = "category", path = "/path/to/drive" }
+
+# Example entries (will be auto-generated when you register drives):
+# "550e8400-e29b-41d4-a716-446655440000" = { label = "ImageUSB", target = "images" }
+# "6ba7b810-9dad-11d1-80b4-00c04fd430c8" = { label = "VideoUSB", target = "videos" }
+# "6ba7b814-9dad-11d1-80b4-00c04fd430c8" = { label = "MusicUSB", target = "music" }
