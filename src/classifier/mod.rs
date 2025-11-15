@@ -115,9 +115,11 @@ impl FileClassifier {
 
 #[derive(Debug, Clone)]
 pub struct FileInfo {
+    #[allow(dead_code)]
     pub path: std::path::PathBuf,
     pub size: u64,
     pub file_type: FileType,
+    #[allow(dead_code)]
     pub extension: Option<String>,
 }
 

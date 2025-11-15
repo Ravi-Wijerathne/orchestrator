@@ -59,10 +59,18 @@ impl SyncManager {
         let hash = calculate_file_hash(source_path)
             .map_err(|e| OrchestratorError::Sync(format!("Failed to hash file: {}", e)))?;
 
-        // Check if already synced
-        if self.state.is_file_synced(source_path, &hash)? {
-            info!("File already synced: {}", source_path.display());
-            return Ok(SyncResult::AlreadySynced);
+        // Check if already synced and verify target file still exists
+        if let Some(file_state) = self.state.get_file_state(source_path)? {
+            if file_state.hash == hash {
+                // Verify the target file still exists
+                if file_state.target_path.exists() {
+                    info!("File already synced: {}", source_path.display());
+                    return Ok(SyncResult::AlreadySynced);
+                } else {
+                    warn!("Target file was deleted, will re-sync: {}", file_state.target_path.display());
+                    // Continue with sync since target no longer exists
+                }
+            }
         }
 
         // Check if target drive is connected
@@ -220,6 +228,51 @@ impl SyncManager {
         self.state.get_sync_stats()
     }
 
+    /// Verify that synced files still exist on target drives and re-queue if missing
+    async fn verify_synced_files(&mut self, drive_uuid: &str) -> Result<()> {
+        let all_states = self.state.get_all_file_states()?;
+        let mut re_synced = 0;
+
+        for file_state in all_states {
+            // Only check files synced to this drive
+            if file_state.target_drive != drive_uuid {
+                continue;
+            }
+
+            // Check if target file still exists
+            if !file_state.target_path.exists() {
+                warn!(
+                    "Target file was deleted, re-syncing: {} -> {}",
+                    file_state.source_path.display(),
+                    file_state.target_path.display()
+                );
+
+                // Check if source file still exists
+                if file_state.source_path.exists() {
+                    // Re-sync the file
+                    match self.sync_file(&file_state.source_path).await {
+                        Ok(_) => {
+                            re_synced += 1;
+                        }
+                        Err(e) => {
+                            error!("Failed to re-sync deleted file: {}", e);
+                        }
+                    }
+                } else {
+                    // Source file also deleted, remove from state
+                    info!("Source file also deleted, removing from state: {}", file_state.source_path.display());
+                    self.state.remove_file_state(&file_state.source_path)?;
+                }
+            }
+        }
+
+        if re_synced > 0 {
+            info!("Re-synced {} files that were deleted from target", re_synced);
+        }
+
+        Ok(())
+    }
+
     /// Check for newly connected drives and process their pending syncs
     pub async fn check_and_sync_connected_drives(&mut self) -> Result<()> {
         self.drive_detector.refresh();
@@ -238,6 +291,10 @@ impl SyncManager {
 
                 if is_connected {
                     info!("Drive {} is connected, checking for pending syncs", drive_config.label);
+                    
+                    // Verify existing synced files still exist on target
+                    self.verify_synced_files(&drive_uuid).await?;
+                    
                     let count = self.process_pending_syncs(&drive_uuid).await?;
                     if count > 0 {
                         info!("Processed {} pending syncs for {}", count, drive_config.label);
@@ -251,6 +308,7 @@ impl SyncManager {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum SyncResult {
     Synced(PathBuf),
     Pending(String),

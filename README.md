@@ -97,12 +97,32 @@ archives = ["zip", "rar", "7z", "tar", "gz"]
 # List currently connected drives to see available drives
 file-orchestrator list-connected
 
-# Register each USB drive with a category
+# Register a USB drive - the system will show you available drives and let you select one
 file-orchestrator register-drive --label "ImageUSB" --category images
+
+# Example output:
+# === Available Drives ===
+# 1. Windows - C:\ (161 GB available)
+# 2. USB - D:\ (7 GB available)
+# ========================
+# 
+# Which drive do you want to register as 'ImageUSB'?
+# Enter number (or press Enter to skip auto-detection): 2
+#
+# ✓ Registered drive:
+#   Label: ImageUSB
+#   Category: images
+#   UUID: d158faad-4337-4eeb-a06f-94434eca6d91
+#   Path: D:\
+
+# Register more drives for different categories
 file-orchestrator register-drive --label "VideoUSB" --category videos
 file-orchestrator register-drive --label "MusicUSB" --category music
 
-# List registered drives
+# Or specify the path manually if needed
+file-orchestrator register-drive --label "MyUSB" --category images --path "E:/"
+
+# List registered drives to verify
 file-orchestrator list-drives
 ```
 

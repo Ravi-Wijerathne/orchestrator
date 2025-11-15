@@ -19,6 +19,8 @@ use tracing::{info, error, Level};
 use tracing_subscriber;
 use std::path::Path;
 use tokio::time::{sleep, Duration};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -102,6 +104,56 @@ fn cmd_register_drive(
         return Ok(());
     }
 
+    // If no path provided, try to auto-detect the drive
+    let drive_path = if let Some(p) = path {
+        Some(p)
+    } else {
+        // List connected drives and let user select
+        let detector = DriveDetector::new();
+        let drives = detector.get_all_drives();
+        
+        if drives.is_empty() {
+            error!("No drives detected. Please specify path manually with --path");
+            return Ok(());
+        }
+
+        println!("\n=== Available Drives ===");
+        for (idx, drive) in drives.iter().enumerate() {
+            println!("{}. {} - {} ({} available)", 
+                idx + 1, 
+                drive.name,
+                drive.mount_point.display(),
+                format_size(drive.available_space)
+            );
+        }
+        println!("========================\n");
+
+        // Prompt for selection
+        println!("Which drive do you want to register as '{}'?", label);
+        println!("Enter number (or press Enter to skip auto-detection): ");
+        
+        use std::io::{self, Write};
+        io::stdout().flush()?;
+        
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim();
+        
+        if input.is_empty() {
+            None
+        } else if let Ok(idx) = input.parse::<usize>() {
+            if idx > 0 && idx <= drives.len() {
+                Some(drives[idx - 1].mount_point.clone())
+            } else {
+                error!("Invalid selection");
+                return Ok(());
+            }
+        } else {
+            error!("Invalid input");
+            return Ok(());
+        }
+    };
+
     // Generate a simple UUID
     let drive_uuid = uuid::Uuid::new_v4().to_string();
 
@@ -111,7 +163,7 @@ fn cmd_register_drive(
         config::DriveConfig {
             label: label.to_string(),
             target: category.to_string(),
-            path,
+            path: drive_path.clone(),
             last_seen: None,
         },
     );
@@ -122,8 +174,26 @@ fn cmd_register_drive(
     println!("  Label: {}", label);
     println!("  Category: {}", category);
     println!("  UUID: {}", drive_uuid);
+    if let Some(p) = drive_path {
+        println!("  Path: {}", p.display());
+    } else {
+        println!("  Path: Not set (will be detected when connected)");
+    }
 
     Ok(())
+}
+
+fn format_size(bytes: u64) -> String {
+    const GB: u64 = 1024 * 1024 * 1024;
+    const MB: u64 = 1024 * 1024;
+    
+    if bytes >= GB {
+        format!("{:.1} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.1} MB", bytes as f64 / MB as f64)
+    } else {
+        format!("{} bytes", bytes)
+    }
 }
 
 /// List all registered drives
@@ -189,7 +259,9 @@ async fn cmd_sync_once(
 async fn cmd_run(config_path: &Path, db_path: &Path, interval: u64) -> Result<()> {
     let config = Config::load(config_path)?;
     let state = StateManager::new(db_path)?;
-    let mut sync_manager = SyncManager::new(config.clone(), state);
+    
+    // Wrap sync_manager in Arc<Mutex<>> for thread-safe sharing
+    let sync_manager = Arc::new(Mutex::new(SyncManager::new(config.clone(), state)));
 
     info!("Starting File Orchestrator...");
     info!("Watching: {}", config.source.path.display());
@@ -198,25 +270,18 @@ async fn cmd_run(config_path: &Path, db_path: &Path, interval: u64) -> Result<()
     let mut file_watcher = AsyncFileWatcher::watch(&config.source.path)?;
 
     // Spawn a task to check for connected drives periodically
-    let config_clone = config.clone();
-    let db_path_clone = db_path.to_path_buf();
+    let sync_manager_clone = Arc::clone(&sync_manager);
     
     tokio::spawn(async move {
         loop {
             sleep(Duration::from_secs(interval)).await;
             
             info!("Checking for connected drives...");
-            let state = match StateManager::new(&db_path_clone) {
-                Ok(s) => s,
-                Err(e) => {
-                    error!("Failed to open state manager: {}", e);
-                    continue;
-                }
-            };
             
-            let mut sync_manager = SyncManager::new(config_clone.clone(), state);
+            // Use the shared sync_manager
+            let mut sm = sync_manager_clone.lock().await;
             
-            if let Err(e) = sync_manager.check_and_sync_connected_drives().await {
+            if let Err(e) = sm.check_and_sync_connected_drives().await {
                 error!("Error checking connected drives: {}", e);
             }
         }
@@ -231,7 +296,8 @@ async fn cmd_run(config_path: &Path, db_path: &Path, interval: u64) -> Result<()
             FileEvent::Created(path) | FileEvent::Modified(path) => {
                 info!("Detected file change: {}", path.display());
                 
-                if let Err(e) = sync_manager.sync_file(&path).await {
+                let mut sm = sync_manager.lock().await;
+                if let Err(e) = sm.sync_file(&path).await {
                     error!("Failed to sync file: {}", e);
                 }
             }

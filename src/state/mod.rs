@@ -62,6 +62,7 @@ impl StateManager {
     }
 
     /// Check if file has been synced (and hasn't changed)
+    #[allow(dead_code)]
     pub fn is_file_synced(&self, source_path: &Path, current_hash: &str) -> Result<bool> {
         if let Some(state) = self.get_file_state(source_path)? {
             return Ok(state.hash == current_hash);
@@ -142,6 +143,28 @@ impl StateManager {
     /// Clear all state (use with caution!)
     pub fn clear_all(&self) -> Result<()> {
         self.db.clear()?;
+        self.db.flush()?;
+        Ok(())
+    }
+
+    /// Get all synced file states
+    pub fn get_all_file_states(&self) -> Result<Vec<FileState>> {
+        let prefix = "file:";
+        let mut files = Vec::new();
+
+        for item in self.db.scan_prefix(prefix.as_bytes()) {
+            let (_, value) = item?;
+            let file_state: FileState = serde_json::from_slice(&value)?;
+            files.push(file_state);
+        }
+
+        Ok(files)
+    }
+
+    /// Remove a file state (for deleted files)
+    pub fn remove_file_state(&self, source_path: &Path) -> Result<()> {
+        let key = self.file_key(source_path);
+        self.db.remove(key)?;
         self.db.flush()?;
         Ok(())
     }

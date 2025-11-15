@@ -46,6 +46,7 @@ impl DriveDetector {
     }
 
     /// Get only removable drives (USB drives)
+    #[allow(dead_code)]
     pub fn get_removable_drives(&self) -> Vec<DriveInfo> {
         self.get_all_drives()
             .into_iter()
@@ -73,6 +74,7 @@ impl DriveDetector {
     }
 
     /// Get drive info for a specific path
+    #[allow(dead_code)]
     pub fn get_drive_for_path(&self, path: &PathBuf) -> Option<DriveInfo> {
         // Find the disk that contains this path
         self.get_all_drives()
@@ -97,6 +99,7 @@ impl DriveDetector {
 
     /// Monitor for newly connected drives (blocking)
     /// Returns a list of newly detected drives
+    #[allow(dead_code)]
     pub fn wait_for_new_drives(&mut self, timeout_secs: u64) -> Vec<DriveInfo> {
         let initial_drives = self.get_drive_map();
         let start = std::time::Instant::now();
@@ -123,6 +126,7 @@ impl DriveDetector {
     }
 
     /// Get a map of mount points to drive info
+    #[allow(dead_code)]
     fn get_drive_map(&self) -> HashMap<PathBuf, DriveInfo> {
         self.get_all_drives()
             .into_iter()
