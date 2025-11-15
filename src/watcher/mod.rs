@@ -54,6 +54,7 @@ impl FileWatcher {
     }
 
     /// Stop watching a directory
+    #[allow(dead_code)]
     pub fn unwatch<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
         let path = path.as_ref();
         

@@ -138,6 +138,7 @@ impl Config {
     }
 
     /// Get file category based on extension
+    #[allow(dead_code)]
     pub fn get_file_category(&self, extension: &str) -> Option<String> {
         let ext = extension.to_lowercase();
 
