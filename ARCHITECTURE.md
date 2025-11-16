@@ -71,31 +71,25 @@ graph TD
 
 ### Sync Process
 
-```
-File Change Detected
-        │
-        ▼
-Classify File Type
-        │
-        ▼
-Find Target Drive ─────► Drive Offline? ───► Add to Pending Queue
-        │                                               │
-        │ Drive Online                                  │
-        ▼                                               │
-Calculate Hash                                          │
-        │                                               │
-        ▼                                               │
-Already Synced? ──Yes──► Skip                          │
-        │                                               │
-        │ No                                            │
-        ▼                                               │
-Copy to Target Drive                                    │
-        │                                               │
-        ▼                                               │
-Update State DB ◄───────────────────────────────────────┘
-        │
-        ▼
-    Complete
+```mermaid
+flowchart TD
+    A[File Change Detected] --> B[Classify File Type]
+    B --> C[Find Target Drive]
+    C --> D{Drive Offline?}
+    D -->|Yes| E[Add to Pending Queue]
+    D -->|No - Drive Online| F[Calculate Hash]
+    F --> G{Already Synced?}
+    G -->|Yes| H[Skip]
+    G -->|No| I[Copy to Target Drive]
+    I --> J[Update State DB]
+    E --> J
+    J --> K[Complete]
+    
+    style A fill:#e3f2fd
+    style E fill:#fff3e0
+    style I fill:#c8e6c9
+    style J fill:#f3e5f5
+    style K fill:#e0f2f1
 ```
 
 ### Watch Mode Flow
