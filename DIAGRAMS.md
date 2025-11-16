@@ -290,6 +290,9 @@ graph LR
     style E fill:#e1bee7
     style F fill:#d1c4e9
     style G fill:#c5cae9
+```
+
+**File Type → USB Mapping:**
 ```mermaid
 flowchart LR
     subgraph SRC["SOURCE (HDD) - MainStorage/"]
