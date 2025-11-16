@@ -115,14 +115,6 @@ flowchart TD
     style E fill:#ffccbc
     style I fill:#c5cae9
 ```
-        ├──► File Watcher Thread ──────► Detect Changes ──► Sync Files
-        │                                      ▲
-        │                                      │
-        └──► Drive Monitor Thread ─────► Check Drives ──► Process Pending
-                  (every N seconds)              │
-                                                 │
-                                          Resume Syncs
-```
 
 ## Component Details
 
