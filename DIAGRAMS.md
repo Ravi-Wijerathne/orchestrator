@@ -51,53 +51,39 @@ graph TB
 
 ## 🔄 Data Flow Diagram
 
-```
-                          ┌─────────────┐
-                          │    USER     │
-                          └──────┬──────┘
-                                 │
-                                 │ commands
-                                 ▼
-                    ┌────────────────────────┐
-                    │   CLI (clap parser)    │
-                    └───────────┬────────────┘
-                                │
-                    ┌───────────┴────────────┐
-                    │                        │
-                    ▼                        ▼
-        ┌──────────────────┐    ┌──────────────────┐
-        │  Command Handler │    │  Config Manager  │
-        └────────┬─────────┘    └────────┬─────────┘
-                 │                       │
-                 │                       ▼
-                 │              ┌────────────────┐
-                 │              │  config.toml   │
-                 │              └────────────────┘
-                 │
-                 ▼
-        ┌───────────────────────────────┐
-        │      Sync Manager             │
-        │  ┌─────────────────────────┐  │
-        │  │ 1. Get file from source │  │
-        │  │ 2. Classify file type   │  │
-        │  │ 3. Calculate hash       │  │
-        │  │ 4. Check if synced      │  │
-        │  │ 5. Find target drive    │  │
-        │  │ 6. Copy or queue        │  │
-        │  └─────────────────────────┘  │
-        └───┬───────────────────────┬───┘
-            │                       │
-            ▼                       ▼
-   ┌────────────────┐      ┌────────────────┐
-   │ State Manager  │      │ Drive Detector │
-   │  (sled DB)     │      │  (sysinfo)     │
-   └────────────────┘      └────────────────┘
-            │                       │
-            ▼                       ▼
-   ┌────────────────┐      ┌────────────────┐
-   │ .orchestrator  │      │ USB Drives     │
-   │     .db/       │      │  E:\ F:\ G:\   │
-   └────────────────┘      └────────────────┘
+```mermaid
+flowchart TD
+    USER[USER] -->|commands| CLI[CLI - clap parser]
+    
+    CLI --> HANDLER[Command Handler]
+    CLI --> CONFIG[Config Manager]
+    
+    CONFIG -->|reads/writes| TOML[config.toml]
+    
+    HANDLER --> SYNC[Sync Manager]
+    
+    subgraph SYNC_PROCESS["Sync Manager Process"]
+        S1[1. Get file from source]
+        S2[2. Classify file type]
+        S3[3. Calculate hash]
+        S4[4. Check if synced]
+        S5[5. Find target drive]
+        S6[6. Copy or queue]
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    end
+    
+    SYNC --> SYNC_PROCESS
+    SYNC_PROCESS --> STATE[State Manager<br/>sled DB]
+    SYNC_PROCESS --> DETECTOR[Drive Detector<br/>sysinfo]
+    
+    STATE --> DB[(orchestrator.db)]
+    DETECTOR --> DRIVES[USB Drives<br/>E:\ F:\ G:\]
+    
+    style USER fill:#e3f2fd
+    style CLI fill:#fff9c4
+    style SYNC fill:#c8e6c9
+    style STATE fill:#ffccbc
+    style DETECTOR fill:#f8bbd0
 ```
 
 ## 🎬 Sync Process Flow
@@ -304,86 +290,141 @@ graph LR
     style E fill:#e1bee7
     style F fill:#d1c4e9
     style G fill:#c5cae9
-```
-┌──────────────────────────────────────────────────────────────┐
-│                   FILE TYPE → USB MAPPING                     │
-└──────────────────────────────────────────────────────────────┘
-
-    SOURCE (HDD)                         TARGET (USB)
-┌───────────────────┐              ┌──────────────────┐
-│   MainStorage/    │              │                  │
-│                   │              │                  │
-│  ├─ photo1.jpg    │─────────────►│  USB1 (Images)   │
-│  ├─ photo2.png    │─────────────►│   E:\images\     │
-│  │                │              │                  │
-│  ├─ video1.mp4    │─────┐        └──────────────────┘
-│  ├─ video2.avi    │─────┤
-│  │                │     │        ┌──────────────────┐
-│  ├─ song1.mp3     │─────┼───────►│  USB2 (Videos)   │
-│  ├─ song2.flac    │─────┼───┐    │   F:\videos\     │
-│  │                │     │   │    │                  │
-│  ├─ doc1.pdf      │─────┼───┼───►└──────────────────┘
-│  └─ archive.zip   │     │   │
-│                   │     └───┼───►┌──────────────────┐
-└───────────────────┘         │    │  USB3 (Music)    │
-                              │    │   G:\music\      │
-                              │    │                  │
-                              └───►└──────────────────┘
+```mermaid
+flowchart LR
+    subgraph SRC["SOURCE (HDD) - MainStorage/"]
+        F1[photo1.jpg]
+        F2[photo2.png]
+        F3[video1.mp4]
+        F4[video2.avi]
+        F5[song1.mp3]
+        F6[song2.flac]
+        F7[doc1.pdf]
+        F8[archive.zip]
+    end
+    
+    subgraph USB1["USB1 (Images)<br/>E:\images\"]
+        I1[ ]
+    end
+    
+    subgraph USB2["USB2 (Videos)<br/>F:\videos\"]
+        V1[ ]
+    end
+    
+    subgraph USB3["USB3 (Music)<br/>G:\music\"]
+        M1[ ]
+    end
+    
+    F1 --> I1
+    F2 --> I1
+    F3 --> V1
+    F4 --> V1
+    F5 --> M1
+    F6 --> M1
+    
+    style SRC fill:#e3f2fd
+    style USB1 fill:#ffcdd2
+    style USB2 fill:#f8bbd0
+    style USB3 fill:#e1bee7
+    style I1 fill:#ffcdd2
+    style V1 fill:#f8bbd0
+    style M1 fill:#e1bee7
 ```
 
 ## ⚙️ Configuration Structure
 
+```mermaid
+classDiagram
+    class config_toml {
+        <<TOML File>>
+    }
+    
+    class source {
+        +String path
+        Where files come from
+    }
+    
+    class rules {
+        +Array~String~ images
+        +Array~String~ videos
+        +Array~String~ music
+        +Array~String~ documents
+        +Array~String~ archives
+        File extensions per category
+    }
+    
+    class drives {
+        +Map~UUID, DriveConfig~
+        Drive registration
+    }
+    
+    class DriveConfig {
+        +String label
+        +String target
+        +String path
+        UUID → Category mapping
+    }
+    
+    config_toml *-- source
+    config_toml *-- rules
+    config_toml *-- drives
+    drives *-- DriveConfig
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      config.toml                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  [source]                                                    │
-│  path = "D:/MainStorage"  ◄── Where files come from        │
-│                                                              │
-│  [rules]                                                     │
-│  images = ["jpg", "png", ...]  ◄── File extensions         │
-│  videos = ["mp4", "avi", ...]      per category             │
-│  music  = ["mp3", "wav", ...]                               │
-│                                                              │
-│  [drives]                                                    │
-│  "uuid-1234" = {            ◄── Drive registration         │
-│    label = "ImageUSB",          UUID → Category mapping     │
-│    target = "images",                                        │
-│    path = "E:\"                                              │
-│  }                                                           │
-│  "uuid-5678" = { ... }                                      │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+
+**Example config.toml:**
+```toml
+[source]
+path = "D:/MainStorage"  # Where files come from
+
+[rules]
+images = ["jpg", "png", ...]  # File extensions
+videos = ["mp4", "avi", ...]  # per category
+music  = ["mp3", "wav", ...]
+
+[drives.uuid-1234]
+label = "ImageUSB"     # Drive registration
+target = "images"      # UUID → Category mapping
+path = "E:\"
 ```
 
 ## 🔍 Watch Mode Timeline
 
-```
-TIME  │  EVENT                          │  ACTION
-──────┼─────────────────────────────────┼────────────────────
-00:00 │  orchestrator run               │  Start watching HDD
-      │                                 │  Start drive monitor
-──────┼─────────────────────────────────┼────────────────────
-00:05 │  User adds photo.jpg            │  Detect new file
-      │                                 │  Classify as image
-      │                                 │  Sync to ImageUSB
-──────┼─────────────────────────────────┼────────────────────
-00:10 │  Drive check (interval)         │  Check all USBs
-      │  All drives connected           │  No action needed
-──────┼─────────────────────────────────┼────────────────────
-00:15 │  User adds video.mp4            │  Detect new file
-      │  VideoUSB disconnected          │  Add to pending queue
-──────┼─────────────────────────────────┼────────────────────
-00:20 │  Drive check                    │  VideoUSB still offline
-      │                                 │  Keep in queue
-──────┼─────────────────────────────────┼────────────────────
-00:25 │  User plugs in VideoUSB         │  Detect USB connection
-      │                                 │  Process pending queue
-      │                                 │  Sync video.mp4
-──────┼─────────────────────────────────┼────────────────────
-00:30 │  Drive check                    │  All synced, no action
-──────┼─────────────────────────────────┼────────────────────
+```mermaid
+gantt
+    title Watch Mode Operations Timeline
+    dateFormat mm:ss
+    axisFormat %M:%S
+    
+    section Startup
+    orchestrator run           :00:00, 5s
+    Start watching HDD         :00:00, 5s
+    Start drive monitor        :00:00, 5s
+    
+    section File Operations
+    User adds photo.jpg        :milestone, 00:05, 0s
+    Detect & classify          :00:05, 2s
+    Sync to ImageUSB          :00:07, 3s
+    
+    section Drive Monitoring
+    Drive check (10s interval) :00:10, 1s
+    All drives connected       :00:10, 1s
+    
+    section Pending Queue
+    User adds video.mp4        :milestone, 00:15, 0s
+    VideoUSB disconnected      :00:15, 1s
+    Add to pending queue       :00:16, 1s
+    Drive check                :00:20, 1s
+    VideoUSB still offline     :00:20, 1s
+    
+    section Queue Processing
+    User plugs VideoUSB        :milestone, 00:25, 0s
+    Detect USB connection      :00:25, 1s
+    Process pending queue      :00:26, 3s
+    Sync video.mp4            :00:26, 3s
+    
+    section Idle
+    Drive check                :00:30, 1s
+    All synced                 :00:30, 1s
 ```
 
 ## 🎯 Summary
