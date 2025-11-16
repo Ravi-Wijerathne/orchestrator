@@ -36,37 +36,35 @@ Each component is isolated in its own module with clear responsibilities:
 
 ## Architecture Layers
 
-```
-┌─────────────────────────────────────────┐
-│         Presentation Layer              │
-│  • CLI commands (clap)                  │
-│  • User interaction                     │
-│  • Output formatting                    │
-└────────────────┬────────────────────────┘
-                 │
-┌────────────────▼────────────────────────┐
-│         Application Layer               │
-│  • Command handlers                     │
-│  • Workflow orchestration               │
-│  • Business logic                       │
-└────────────────┬────────────────────────┘
-                 │
-┌────────────────▼────────────────────────┐
-│         Domain Layer                    │
-│  • Sync Manager (core logic)            │
-│  • File Classifier                      │
-│  • State Manager                        │
-│  • Drive Detector                       │
-│  • File Watcher                         │
-└────────────────┬────────────────────────┘
-                 │
-┌────────────────▼────────────────────────┐
-│         Infrastructure Layer            │
-│  • File system (tokio::fs)              │
-│  • Database (sled)                      │
-│  • System info (sysinfo)                │
-│  • File watching (notify)               │
-└─────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Presentation Layer] --> B[Application Layer]
+    B --> C[Domain Layer]
+    C --> D[Infrastructure Layer]
+    
+    A1[CLI commands - clap] -.-> A
+    A2[User interaction] -.-> A
+    A3[Output formatting] -.-> A
+    
+    B1[Command handlers] -.-> B
+    B2[Workflow orchestration] -.-> B
+    B3[Business logic] -.-> B
+    
+    C1[Sync Manager] -.-> C
+    C2[File Classifier] -.-> C
+    C3[State Manager] -.-> C
+    C4[Drive Detector] -.-> C
+    C5[File Watcher] -.-> C
+    
+    D1[File system - tokio::fs] -.-> D
+    D2[Database - sled] -.-> D
+    D3[System info - sysinfo] -.-> D
+    D4[File watching - notify] -.-> D
+    
+    style A fill:#e1f5ff
+    style B fill:#fff9e6
+    style C fill:#e8f5e9
+    style D fill:#fce4ec
 ```
 
 ## Data Flow
@@ -102,9 +100,27 @@ Update State DB ◄────────────────────�
 
 ### Watch Mode Flow
 
+```mermaid
+flowchart TD
+    A[Start Watch Mode] --> B[Initialize File Watcher]
+    B --> C[Monitor Source Directory]
+    C --> D{File Event?}
+    D -->|Create/Modify| E[Trigger Sync Process]
+    D -->|Delete| F[Log Event]
+    D -->|No Event| C
+    E --> G[Background Thread]
+    G --> H{Check Interval}
+    H -->|Every 10s| I[Check Connected Drives]
+    I --> J[Process Pending Syncs]
+    J --> K[Verify Synced Files]
+    K --> H
+    F --> C
+    
+    style A fill:#e1bee7
+    style C fill:#b2dfdb
+    style E fill:#ffccbc
+    style I fill:#c5cae9
 ```
-Start Watch Mode
-        │
         ├──► File Watcher Thread ──────► Detect Changes ──► Sync Files
         │                                      ▲
         │                                      │

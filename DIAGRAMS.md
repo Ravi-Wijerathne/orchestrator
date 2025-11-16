@@ -2,75 +2,51 @@
 
 ## 🎨 Complete System Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        FILE ORCHESTRATOR                             │
-│                    Production-Grade File Sync Tool                   │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                         USER INTERFACE (CLI)                         │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
-│  │   init   │  │register  │  │   run    │  │  status  │  ...      │
-│  │          │  │  drive   │  │          │  │          │           │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘           │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────────────┐
-│                    APPLICATION LAYER                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌─────────────────────────────────────────────────────────┐       │
-│  │              COMMAND HANDLERS                            │       │
-│  │  • Initialize config                                     │       │
-│  │  • Register drives                                       │       │
-│  │  • Execute sync                                          │       │
-│  │  • Show statistics                                       │       │
-│  └─────────────────────────────────────────────────────────┘       │
-│                                                                      │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────────────┐
-│                       CORE ENGINE (Domain Layer)                     │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐         │
-│  │   Config     │    │     File     │    │    State     │         │
-│  │   Manager    │◄───┤  Classifier  │───►│   Manager    │         │
-│  └──────────────┘    └──────────────┘    └──────────────┘         │
-│         │                    │                    │                 │
-│         │                    │                    │                 │
-│         ▼                    ▼                    ▼                 │
-│  ┌──────────────────────────────────────────────────────┐          │
-│  │                  SYNC MANAGER                         │          │
-│  │  ┌────────────────────────────────────────────────┐  │          │
-│  │  │  • Check if file already synced (hash)         │  │          │
-│  │  │  • Find target drive for file type            │  │          │
-│  │  │  • Copy file if drive is online                │  │          │
-│  │  │  • Queue file if drive is offline              │  │          │
-│  │  │  • Resume pending syncs when drive reconnects  │  │          │
-│  │  └────────────────────────────────────────────────┘  │          │
-│  └──────────────────────────────────────────────────────┘          │
-│         │                                        │                  │
-│         ▼                                        ▼                  │
-│  ┌──────────────┐                        ┌──────────────┐          │
-│  │     File     │                        │    Drive     │          │
-│  │   Watcher    │                        │   Detector   │          │
-│  └──────────────┘                        └──────────────┘          │
-│                                                                      │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────────────┐
-│                 INFRASTRUCTURE LAYER                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │   File I/O   │  │   Database   │  │   System     │             │
-│  │  (tokio::fs) │  │    (sled)    │  │   (sysinfo)  │             │
-│  └──────────────┘  └──────────────┘  └──────────────┘             │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph CLI["USER INTERFACE (CLI)"]
+        CMD1[init]
+        CMD2[register-drive]
+        CMD3[run]
+        CMD4[status]
+        CMD5[sync-once]
+    end
+    
+    subgraph APP["APPLICATION LAYER"]
+        HANDLERS[Command Handlers<br/>• Initialize config<br/>• Register drives<br/>• Execute sync<br/>• Show statistics]
+    end
+    
+    subgraph CORE["CORE ENGINE (Domain Layer)"]
+        CONFIG[Config Manager]
+        CLASSIFIER[File Classifier]
+        STATE[State Manager]
+        
+        SYNC["SYNC MANAGER<br/>────────────────<br/>• Check if synced (hash)<br/>• Find target drive<br/>• Copy if online<br/>• Queue if offline<br/>• Resume on reconnect"]
+        
+        WATCHER[File Watcher]
+        DETECTOR[Drive Detector]
+    end
+    
+    subgraph INFRA["INFRASTRUCTURE LAYER"]
+        FS[File I/O<br/>tokio::fs]
+        DB[Database<br/>sled]
+        SYS[System Info<br/>sysinfo]
+    end
+    
+    CLI --> APP
+    APP --> CORE
+    CONFIG --> SYNC
+    CLASSIFIER --> SYNC
+    STATE --> SYNC
+    SYNC --> WATCHER
+    SYNC --> DETECTOR
+    CORE --> INFRA
+    
+    style CLI fill:#e3f2fd
+    style APP fill:#fff9c4
+    style CORE fill:#c8e6c9
+    style INFRA fill:#ffccbc
+    style SYNC fill:#b2dfdb
 ```
 
 ## 🔄 Data Flow Diagram
@@ -213,43 +189,121 @@
 
 ## 🗄️ State Database Schema
 
+```mermaid
+erDiagram
+    FILE_STATE {
+        string key "file:source_path"
+        string source_path
+        string hash "BLAKE3"
+        int size
+        int last_synced "timestamp"
+        string target_drive "UUID"
+        string target_path
+        string file_category
+    }
+    
+    PENDING_SYNC {
+        string key "pending:source_path"
+        string source_path
+        string file_category
+        string target_drive "UUID"
+        string hash "BLAKE3"
+        int size
+        int created_at "timestamp"
+    }
+    
+    FILE_STATE ||--o{ PENDING_SYNC : "queued when offline"
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   SLED DATABASE (.orchestrator.db)          │
-└─────────────────────────────────────────────────────────────┘
 
-┌──────────────────────────────────────────────────────────────┐
-│  KEY PREFIX: "file:"                                         │
-├──────────────────────────────────────────────────────────────┤
-│  Key: file:C:\MainStorage\photo.jpg                          │
-│  Value: {                                                    │
-│    "source_path": "C:\\MainStorage\\photo.jpg",             │
-│    "hash": "abc123def456...",                               │
-│    "size": 1048576,                                          │
-│    "last_synced": 1699545600,                               │
-│    "target_drive": "uuid-1234-5678",                        │
-│    "target_path": "E:\\images\\photo.jpg",                  │
-│    "file_category": "images"                                │
-│  }                                                           │
-└──────────────────────────────────────────────────────────────┘
+**Example Records:**
 
-┌──────────────────────────────────────────────────────────────┐
-│  KEY PREFIX: "pending:"                                      │
-├──────────────────────────────────────────────────────────────┤
-│  Key: pending:C:\MainStorage\video.mp4                       │
-│  Value: {                                                    │
-│    "source_path": "C:\\MainStorage\\video.mp4",             │
-│    "file_category": "videos",                               │
-│    "target_drive": "uuid-9876-5432",                        │
-│    "hash": "xyz789abc...",                                  │
-│    "size": 52428800,                                         │
-│    "created_at": 1699545700                                 │
-│  }                                                           │
-└──────────────────────────────────────────────────────────────┘
+**FileState:**
+```json
+{
+  "key": "file:C:\\MainStorage\\photo.jpg",
+  "source_path": "C:\\MainStorage\\photo.jpg",
+  "hash": "abc123def456...",
+  "size": 1048576,
+  "last_synced": 1699545600,
+  "target_drive": "uuid-1234-5678",
+  "target_path": "E:\\images\\photo.jpg",
+  "file_category": "images"
+}
+```
+
+**PendingSync:**
+```json
+{
+  "key": "pending:C:\\MainStorage\\video.mp4",
+  "source_path": "C:\\MainStorage\\video.mp4",
+  "file_category": "videos",
+  "target_drive": "uuid-9876-5432",
+  "hash": "xyz789abc...",
+  "size": 52428800,
+  "created_at": 1699545700
+}
 ```
 
 ## 📁 File Category Mapping
 
+```mermaid
+mindmap
+  root((File Orchestrator))
+    Images
+      jpg
+      jpeg
+      png
+      gif
+      bmp
+      webp
+      svg
+    Videos
+      mp4
+      avi
+      mov
+      mkv
+      flv
+      wmv
+      webm
+    Music
+      mp3
+      wav
+      flac
+      aac
+      ogg
+      m4a
+      wma
+    Documents
+      pdf
+      doc
+      docx
+      txt
+      xlsx
+      pptx
+    Archives
+      zip
+      rar
+      7z
+      tar
+      gz
+```
+
+**Drive Assignment:**
+```mermaid
+graph LR
+    A[Source HDD] --> B{File Classifier}
+    B -->|images| C[ImageUSB]
+    B -->|videos| D[VideoUSB]
+    B -->|music| E[MusicUSB]
+    B -->|documents| F[DocUSB]
+    B -->|archives| G[ArchiveUSB]
+    
+    style A fill:#e3f2fd
+    style C fill:#ffcdd2
+    style D fill:#f8bbd0
+    style E fill:#e1bee7
+    style F fill:#d1c4e9
+    style G fill:#c5cae9
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                   FILE TYPE → USB MAPPING                     │
