@@ -380,14 +380,14 @@ classDiagram
 path = "D:/MainStorage"  # Where files come from
 
 [rules]
-images = ["jpg", "png", ...]  # File extensions
-videos = ["mp4", "avi", ...]  # per category
-music  = ["mp3", "wav", ...]
+images = ["jpg", "png", "gif", "bmp"]  # File extensions
+videos = ["mp4", "avi", "mov", "mkv"]  # per category
+music  = ["mp3", "wav", "flac", "aac"]
 
-[drives.uuid-1234]
+[drives.d158faad-4337-4eeb-a06f-94434eca6d91]
 label = "ImageUSB"     # Drive registration
 target = "images"      # UUID → Category mapping
-path = "E:\"
+path = "E:/"           # Use forward slash
 ```
 
 ## 🔍 Watch Mode Timeline
