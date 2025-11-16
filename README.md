@@ -14,30 +14,33 @@ A production-grade file orchestration tool written in Rust for automatic file sy
 
 ## 🏗️ Architecture
 
-```
-┌──────────────────────────────────────────┐
-│         User Interface (CLI)             │
-│  ─ clap for argument parsing             │
-└──────────────────────────────────────────┘
-                 │
-                 ▼
-┌──────────────────────────────────────────┐
-│          Core Engine                      │
-│  ├─ Config Manager (TOML)                │
-│  ├─ File Watcher (notify)                │
-│  ├─ File Classifier (infer)              │
-│  ├─ Sync Manager                         │
-│  ├─ Drive Detector (sysinfo)             │
-│  ├─ State Manager (sled DB)              │
-└──────────────────────────────────────────┘
-                 │
-                 ▼
-┌──────────────────────────────────────────┐
-│      System Integration                   │
-│  ├─ Async Runtime (tokio)                │
-│  ├─ Logging (tracing)                    │
-│  ├─ File Hashing (blake3)                │
-└──────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph UI["User Interface (CLI)"]
+        CLAP[clap for argument parsing]
+    end
+    
+    subgraph CORE["Core Engine"]
+        CONFIG[Config Manager - TOML]
+        WATCHER[File Watcher - notify]
+        CLASSIFIER[File Classifier - infer]
+        SYNC[Sync Manager]
+        DETECTOR[Drive Detector - sysinfo]
+        STATE[State Manager - sled DB]
+    end
+    
+    subgraph SYS["System Integration"]
+        TOKIO[Async Runtime - tokio]
+        LOG[Logging - tracing]
+        HASH[File Hashing - blake3]
+    end
+    
+    UI --> CORE
+    CORE --> SYS
+    
+    style UI fill:#e3f2fd
+    style CORE fill:#c8e6c9
+    style SYS fill:#fff9c4
 ```
 
 ## 📋 Prerequisites
