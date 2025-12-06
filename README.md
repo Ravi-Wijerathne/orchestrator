@@ -50,17 +50,28 @@ graph TB
 
 ## 🚀 Installation
 
-### From Source
+### Quick Start (Recommended)
 
 ```bash
 # Clone the repository (or create from this folder)
 cd orchestrator
 
+# Run the startup script - it will check dependencies and install
+./start.sh
+
+# Select option 1 to install globally
+# After installation, you can use 'fo' command from anywhere!
+```
+
+### Manual Installation
+
+```bash
 # Build the project
 cargo build --release
 
-# The binary will be in target/release/file-orchestrator
-# Optionally, install it globally:
+# The binary will be in target/release/fo
+
+# Install globally:
 cargo install --path .
 ```
 
@@ -70,7 +81,7 @@ cargo install --path .
 
 ```bash
 # Create a default configuration file
-file-orchestrator init
+fo init
 
 # This creates config.toml in the current directory
 ```
@@ -81,7 +92,7 @@ Edit `config.toml` to set your source directory:
 
 ```toml
 [source]
-path = "D:/MainStorage"  # Your HDD path
+path = "/path/to/your/MainStorage"  # Your main storage path
 
 [rules]
 images = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"]
@@ -98,10 +109,10 @@ archives = ["zip", "rar", "7z", "tar", "gz"]
 
 ```bash
 # List currently connected drives to see available drives
-file-orchestrator list-connected
+fo list-connected
 
 # Register a USB drive - the system will show you available drives and let you select one
-file-orchestrator register-drive --label "ImageUSB" --category images
+fo register-drive --label "ImageUSB" --category images
 
 # Example output:
 # === Available Drives ===
@@ -119,14 +130,14 @@ file-orchestrator register-drive --label "ImageUSB" --category images
 #   Path: D:\
 
 # Register more drives for different categories
-file-orchestrator register-drive --label "VideoUSB" --category videos
-file-orchestrator register-drive --label "MusicUSB" --category music
+fo register-drive --label "VideoUSB" --category videos
+fo register-drive --label "MusicUSB" --category music
 
 # Or specify the path manually if needed
-file-orchestrator register-drive --label "MyUSB" --category images --path "E:/"
+fo register-drive --label "MyUSB" --category images --path "/path/to/usb"
 
 # List registered drives to verify
-file-orchestrator list-drives
+fo list-drives
 ```
 
 ### 4. Run the Orchestrator
@@ -135,46 +146,46 @@ file-orchestrator list-drives
 
 ```bash
 # Start the orchestrator in watch mode
-file-orchestrator run
+fo run
 
 # With custom interval for checking drives (default: 10 seconds)
-file-orchestrator run --interval 30
+fo run --interval 30
 ```
 
 #### One-Time Sync
 
 ```bash
 # Sync all files once
-file-orchestrator sync-once
+fo sync-once
 
 # Sync a specific file
-file-orchestrator sync-once --file "D:/MainStorage/photo.jpg"
+fo sync-once --file "/path/to/MainStorage/photo.jpg"
 ```
 
 ### 5. Monitor Status
 
 ```bash
 # Check sync status and statistics
-file-orchestrator status
+fo status
 
 # Process pending syncs manually
-file-orchestrator process-pending
+fo process-pending
 ```
 
 ## 🔧 Commands Reference
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `init` | Create a default configuration file | `file-orchestrator init` |
-| `register-drive` | Register a USB drive for a file category | `file-orchestrator register-drive --label "MyUSB" --category images` |
-| `list-drives` | List all registered drives | `file-orchestrator list-drives` |
-| `list-connected` | List currently connected drives | `file-orchestrator list-connected` |
-| `sync-once` | Perform a one-time sync | `file-orchestrator sync-once` |
-| `run` | Start in watch mode | `file-orchestrator run` |
-| `status` | Show sync statistics | `file-orchestrator status` |
-| `process-pending` | Process queued syncs | `file-orchestrator process-pending` |
-| `validate` | Validate configuration file | `file-orchestrator validate` |
-| `clear` | Clear all sync history | `file-orchestrator clear --confirm` |
+| `init` | Create a default configuration file | `fo init` |
+| `register-drive` | Register a USB drive for a file category | `fo register-drive --label "MyUSB" --category images` |
+| `list-drives` | List all registered drives | `fo list-drives` |
+| `list-connected` | List currently connected drives | `fo list-connected` |
+| `sync-once` | Perform a one-time sync | `fo sync-once` |
+| `run` | Start in watch mode | `fo run` |
+| `status` | Show sync statistics | `fo status` |
+| `process-pending` | Process queued syncs | `fo process-pending` |
+| `validate` | Validate configuration file | `fo validate` |
+| `clear` | Clear all sync history | `fo clear --confirm` |
 
 ## 📁 Project Structure
 
@@ -251,13 +262,13 @@ cargo test test_file_classifier
 
 ### Issue: Drive not detected
 
-**Solution**: Use `file-orchestrator list-connected` to see all drives and their mount points. Then register the drive with the exact label or path.
+**Solution**: Use `fo list-connected` to see all drives and their mount points. Then register the drive with the exact label or path.
 
 ### Issue: Files not syncing
 
 **Solution**: 
-1. Check `file-orchestrator status` to see pending syncs
-2. Verify drive is connected: `file-orchestrator list-connected`
+1. Check `fo status` to see pending syncs
+2. Verify drive is connected: `fo list-connected`
 3. Check logs for errors (run with `RUST_LOG=debug`)
 
 ### Issue: Permission errors
@@ -292,10 +303,10 @@ cargo test test_file_classifier
 
 ```bash
 # Day 1: Setup
-file-orchestrator init
+fo init
 # Edit config.toml to set source path
-file-orchestrator register-drive --label "Photos" --category images
-file-orchestrator run
+fo register-drive --label "Photos" --category images
+fo run
 
 # Day 2: USB is unplugged
 # Tool queues new photos automatically
@@ -304,7 +315,7 @@ file-orchestrator run
 # Tool detects USB and syncs all pending photos automatically
 
 # Anytime: Check status
-file-orchestrator status
+fo status
 ```
 
 ## 🤝 Contributing
