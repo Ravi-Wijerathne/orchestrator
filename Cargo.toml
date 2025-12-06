@@ -3,6 +3,10 @@ name = "file-orchestrator"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "fo"
+path = "src/main.rs"
+
 [dependencies]
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }
