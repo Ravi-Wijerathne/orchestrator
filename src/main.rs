@@ -298,6 +298,21 @@ async fn cmd_run(config_path: &Path, db_path: &Path, interval: u64) -> Result<()
     info!("Starting File Orchestrator...");
     info!("Watching: {}", config.source.path.display());
 
+    // Perform initial sync of existing files
+    info!("Performing initial sync of existing files...");
+    {
+        let mut sm = sync_manager.lock().await;
+        match sm.sync_all().await {
+            Ok(summary) => {
+                info!("Initial sync complete: {} synced, {} pending, {} already synced, {} skipped", 
+                      summary.synced, summary.pending, summary.already_synced, summary.skipped);
+            }
+            Err(e) => {
+                error!("Initial sync failed: {}", e);
+            }
+        }
+    }
+
     // Start file watcher
     let mut file_watcher = AsyncFileWatcher::watch(&config.source.path)?;
 

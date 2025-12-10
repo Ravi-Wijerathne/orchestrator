@@ -24,6 +24,12 @@ pub struct FileOrchestratorApp {
     // Status messages
     status_message: Option<String>,
     error_message: Option<String>,
+    
+    // Watcher control
+    watcher_running: Arc<Mutex<bool>>,
+    watcher_handle: Arc<Mutex<Option<std::process::Child>>>,
+    config_path: String,
+    db_path: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -37,7 +43,8 @@ impl FileOrchestratorApp {
     pub fn new(
         config: Config,
         state_manager: StateManager,
-        _db_path: String,
+        db_path: String,
+        config_path: String,
     ) -> Self {
         let drive_detector = DriveDetector::new();
         
@@ -53,6 +60,10 @@ impl FileOrchestratorApp {
             selected_path: None,
             status_message: None,
             error_message: None,
+            watcher_running: Arc::new(Mutex::new(false)),
+            watcher_handle: Arc::new(Mutex::new(None)),
+            config_path,
+            db_path,
         }
     }
     
@@ -131,6 +142,30 @@ impl FileOrchestratorApp {
                 ui.separator();
             }
         }
+        
+        ui.add_space(20.0);
+        
+        // Watcher control
+        ui.heading("File Watcher");
+        ui.separator();
+        
+        let is_running = *self.watcher_running.lock().unwrap();
+        
+        ui.horizontal(|ui| {
+            let status_color = if is_running { egui::Color32::GREEN } else { egui::Color32::RED };
+            let status_text = if is_running { "[RUNNING]" } else { "[STOPPED]" };
+            ui.label(egui::RichText::new(status_text).color(status_color).strong());
+            
+            if is_running {
+                if ui.button("Stop Watcher").clicked() {
+                    self.stop_watcher();
+                }
+            } else {
+                if ui.button("Start Watcher").clicked() {
+                    self.start_watcher();
+                }
+            }
+        });
         
         ui.add_space(20.0);
         
@@ -241,6 +276,45 @@ impl FileOrchestratorApp {
         });
     }
     
+    fn start_watcher(&mut self) {
+        use std::process::Command;
+        
+        // Get the binary path (assume it's in the same directory as config)
+        let binary_path = std::env::current_exe()
+            .unwrap_or_else(|_| PathBuf::from("./target/release/fo"));
+        
+        match Command::new(&binary_path)
+            .arg("run")
+            .arg("--interval")
+            .arg("5")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+        {
+            Ok(child) => {
+                *self.watcher_running.lock().unwrap() = true;
+                *self.watcher_handle.lock().unwrap() = Some(child);
+                self.status_message = Some("File watcher started successfully".to_string());
+            }
+            Err(e) => {
+                self.error_message = Some(format!("Failed to start watcher: {}", e));
+            }
+        }
+    }
+    
+    fn stop_watcher(&mut self) {
+        let mut handle = self.watcher_handle.lock().unwrap();
+        
+        if let Some(mut child) = handle.take() {
+            if let Err(e) = child.kill() {
+                self.error_message = Some(format!("Failed to stop watcher: {}", e));
+            } else {
+                *self.watcher_running.lock().unwrap() = false;
+                self.status_message = Some("File watcher stopped".to_string());
+            }
+        }
+    }
+    
     fn show_settings(&mut self, ui: &mut egui::Ui) {
         ui.heading("Settings");
         ui.add_space(10.0);
@@ -271,6 +345,16 @@ impl FileOrchestratorApp {
                 ui.label(format!("Archives: {}", archives.join(", ")));
             }
         });
+    }
+}
+
+impl Drop for FileOrchestratorApp {
+    fn drop(&mut self) {
+        // Stop the watcher when GUI closes
+        let mut handle = self.watcher_handle.lock().unwrap();
+        if let Some(mut child) = handle.take() {
+            let _ = child.kill();
+        }
     }
 }
 
@@ -334,6 +418,9 @@ pub fn run_gui(config_path: String, db_path: String) -> Result<()> {
     let config = Config::load(&config_path)?;
     let state_manager = StateManager::new(&db_path)?;
     
+    let config_path_clone = config_path.clone();
+    let db_path_clone = db_path.clone();
+    
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1000.0, 700.0])
@@ -344,8 +431,8 @@ pub fn run_gui(config_path: String, db_path: String) -> Result<()> {
     eframe::run_native(
         "File Orchestrator",
         options,
-        Box::new(|_cc| {
-            Box::new(FileOrchestratorApp::new(config, state_manager, db_path))
+        Box::new(move |_cc| {
+            Box::new(FileOrchestratorApp::new(config, state_manager, db_path_clone, config_path_clone))
         }),
     ).map_err(|e| crate::error::OrchestratorError::Config(format!("GUI error: {}", e)))?;
     
