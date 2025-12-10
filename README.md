@@ -22,6 +22,11 @@ Automatic file synchronization across multiple storage devices with intelligent 
 # Clone and build
 git clone <repo-url>
 cd orchestrator
+
+# Quick setup using provided script
+./start.sh
+
+# Or build manually
 cargo build --release
 
 # Install globally
@@ -37,11 +42,15 @@ fo --help
 ### GUI Setup
 
 ```bash
-# Install frontend dependencies
-./setup-gui.sh
+# Setup GUI dependencies and build
+./complete-setup.sh
 
-# Build with GUI
+# Or manual setup
+./setup-gui.sh
 cargo build --features gui --release
+
+# Generate icons (optional)
+./generate-icons.sh
 ```
 
 ## Quick Start
