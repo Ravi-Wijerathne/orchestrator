@@ -18,39 +18,56 @@ Automatic file synchronization across multiple storage devices with intelligent 
 
 ## Installation
 
+### Option 1: CLI Only (Recommended for beginners)
+
 ```bash
-# Clone and build
-git clone <repo-url>
+# Clone and setup
+git clone https://github.com/Ravi-Wijerathne/orchestrator.git
 cd orchestrator
 
-# Quick setup using provided script
-./start.sh
+# Run the setup script - handles everything automatically
+./start-cli.sh
 
-# Or build manually
-cargo build --release
-
-# Install globally
-cargo install --path .
-
-# Run GUI (if built with GUI feature)
-fo --gui
-
-# Or use CLI commands
-fo --help
+# The script will:
+# - Check dependencies
+# - Build the project
+# - Offer to install globally
+# After installation, use 'fo' command anywhere
 ```
 
-### GUI Setup
+### Option 2: GUI Version (Full featured)
 
 ```bash
-# Setup GUI dependencies and build
+# Clone the repository
+git clone https://github.com/Ravi-Wijerathne/orchestrator.git
+cd orchestrator
+
+# Run complete GUI setup - one command does it all
 ./complete-setup.sh
 
-# Or manual setup
-./setup-gui.sh
+# This script will:
+# - Install Node.js dependencies
+# - Generate icons
+# - Build the project with GUI features
+# - Create the binary in target/release/
+
+# Launch the GUI anytime with:
+./start-gui.sh
+```
+
+### Option 3: Manual Build
+
+```bash
+# CLI only
+cargo build --release
+
+# GUI version
+./setup-gui.sh              # Install frontend dependencies
+./generate-icons.sh         # Generate app icons (optional)
 cargo build --features gui --release
 
-# Generate icons (optional)
-./generate-icons.sh
+# Install globally (optional)
+cargo install --path .
 ```
 
 ## Quick Start
