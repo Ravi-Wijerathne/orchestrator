@@ -7,6 +7,9 @@ mod sync;
 mod watcher;
 mod cli;
 
+#[cfg(feature = "gui")]
+mod gui;
+
 use cli::{Cli, Commands};
 use config::Config;
 use state::StateManager;
@@ -22,8 +25,43 @@ use tokio::time::{sleep, Duration};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+#[cfg(not(feature = "gui"))]
 #[tokio::main]
 async fn main() -> Result<()> {
+    run_cli().await
+}
+
+#[cfg(feature = "gui")]
+fn main() -> Result<()> {
+    // Check if GUI mode is requested
+    let args: Vec<String> = std::env::args().collect();
+    
+    if args.contains(&"--gui".to_string()) || args.len() == 1 {
+        // Run GUI mode
+        let config_path = args.iter()
+            .position(|arg| arg == "--config")
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+            .unwrap_or_else(|| "config.toml".to_string());
+        
+        let db_path = args.iter()
+            .position(|arg| arg == "--db")
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+            .unwrap_or_else(|| "orchestrator.db".to_string());
+        
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(gui::run_gui(config_path, db_path))
+    } else {
+        // Run CLI mode
+        tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(run_cli())
+    }
+}
+
+async fn run_cli() -> Result<()> {
     // Initialize logging
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
