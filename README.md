@@ -53,24 +53,46 @@ graph TB
 ### From Source
 
 ```bash
-# Clone the repository (or create from this folder)
+# Clone the repository
 cd orchestrator
 
-# Build the project
+# Build CLI version
 cargo build --release
 
-# The binary will be in target/release/file-orchestrator
+# Or build with GUI support
+cargo build --features gui --release
+
+# The binary will be in target/release/fo
 # Optionally, install it globally:
-cargo install --path .
+cargo install --path .  # CLI only
+cargo install --path . --features gui  # With GUI
 ```
 
 ## 📖 Usage
+
+### GUI Mode (Graphical Interface)
+
+```bash
+# Run with GUI
+./target/release/fo --gui
+
+# Or use the launcher script
+./start-gui.sh
+
+# Features:
+# - 📊 Dashboard with real-time drive status
+# - 💽 Visual drive manager (add/remove drives)
+# - ⚙️ Settings viewer
+# - 🔄 Refresh status button
+```
+
+### CLI Mode (Command Line)
 
 ### 1. Initialize Configuration
 
 ```bash
 # Create a default configuration file
-file-orchestrator init
+fo init
 
 # This creates config.toml in the current directory
 ```

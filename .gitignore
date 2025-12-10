@@ -1,3 +1,37 @@
+# Rust build artifacts
 /target
-config.toml
+*.pdb
+
+# Database
 .orchestrator.db
+*.db
+*.db-shm
+*.db-wal
+
+# Configuration (contains user-specific paths)
+config.toml
+
+# Cargo lock for binaries (optional - keep for reproducible builds)
+# Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.tmp
+*~
+
+# Documentation generated files
+GUI_SUMMARY.md
