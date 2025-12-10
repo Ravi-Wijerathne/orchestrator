@@ -7,6 +7,9 @@ mod sync;
 mod watcher;
 mod cli;
 
+#[cfg(feature = "gui")]
+mod gui;
+
 use cli::{Cli, Commands};
 use config::Config;
 use state::StateManager;
@@ -22,8 +25,37 @@ use tokio::time::{sleep, Duration};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
+    // Check for --gui flag
+    let args: Vec<String> = std::env::args().collect();
+    
+    #[cfg(feature = "gui")]
+    {
+        if args.contains(&"--gui".to_string()) {
+            // Run GUI mode
+            let config_path = args.iter()
+                .position(|arg| arg == "--config")
+                .and_then(|i| args.get(i + 1))
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "config.toml".to_string());
+            
+            let db_path = args.iter()
+                .position(|arg| arg == "--db")
+                .and_then(|i| args.get(i + 1))
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "orchestrator.db".to_string());
+            
+            return gui::run_gui(config_path, db_path);
+        }
+    }
+    
+    // Run CLI mode
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(run_cli())
+}
+
+async fn run_cli() -> Result<()> {
     // Initialize logging
     tracing_subscriber::fmt()
         .with_max_level(Level::INFO)
@@ -265,6 +297,21 @@ async fn cmd_run(config_path: &Path, db_path: &Path, interval: u64) -> Result<()
 
     info!("Starting File Orchestrator...");
     info!("Watching: {}", config.source.path.display());
+
+    // Perform initial sync of existing files
+    info!("Performing initial sync of existing files...");
+    {
+        let mut sm = sync_manager.lock().await;
+        match sm.sync_all().await {
+            Ok(summary) => {
+                info!("Initial sync complete: {} synced, {} pending, {} already synced, {} skipped", 
+                      summary.synced, summary.pending, summary.already_synced, summary.skipped);
+            }
+            Err(e) => {
+                error!("Initial sync failed: {}", e);
+            }
+        }
+    }
 
     // Start file watcher
     let mut file_watcher = AsyncFileWatcher::watch(&config.source.path)?;
