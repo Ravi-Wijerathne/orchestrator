@@ -1,3 +1,39 @@
+# Rust build artifacts
 /target
-config.toml
+*.pdb
+
+# Database
 .orchestrator.db
+
+# Configuration (contains user-specific paths)
+config.toml
+
+# GUI/Frontend
+/ui/node_modules
+/ui/dist
+/ui/.vite
+/ui/package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Tauri build artifacts
+/src-tauri/target
+
+# Icons (generated)
+/icons/
+*.icns
+*.ico
+*.png
+!ui/public/*.png

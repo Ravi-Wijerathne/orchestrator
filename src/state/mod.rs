@@ -169,70 +169,6 @@ impl StateManager {
         Ok(())
     }
 
-    /// Get sync count
-    pub fn get_sync_count(&self) -> Result<usize> {
-        let prefix = "file:";
-        let count = self.db.scan_prefix(prefix.as_bytes()).count();
-        Ok(count)
-    }
-
-    /// Get pending count
-    pub fn get_pending_count(&self) -> Result<usize> {
-        let prefix = "pending:";
-        let count = self.db.scan_prefix(prefix.as_bytes()).count();
-        Ok(count)
-    }
-
-    /// Get file type counts
-    pub fn get_file_type_counts(&self) -> Result<std::collections::HashMap<String, usize>> {
-        let prefix = "file:";
-        let mut counts = std::collections::HashMap::new();
-
-        for item in self.db.scan_prefix(prefix.as_bytes()) {
-            let (_, value) = item?;
-            let file_state: FileState = serde_json::from_slice(&value)?;
-            *counts.entry(file_state.file_category.clone()).or_insert(0) += 1;
-        }
-
-        Ok(counts)
-    }
-
-    /// Get sync history
-    pub fn get_sync_history(&self, limit: usize) -> Result<Vec<SyncRecord>> {
-        let prefix = "file:";
-        let mut records = Vec::new();
-
-        for item in self.db.scan_prefix(prefix.as_bytes()) {
-            let (_, value) = item?;
-            let file_state: FileState = serde_json::from_slice(&value)?;
-            
-            records.push(SyncRecord {
-                id: uuid::Uuid::new_v4().to_string(),
-                source_path: file_state.source_path.display().to_string(),
-                target_drive: file_state.target_drive,
-                target_path: file_state.target_path.display().to_string(),
-                file_type: file_state.source_path
-                    .extension()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or("unknown")
-                    .to_string(),
-                category: file_state.file_category,
-                file_hash: file_state.hash,
-                synced_at: chrono::DateTime::from_timestamp(file_state.last_synced as i64, 0)
-                    .unwrap()
-                    .to_rfc3339(),
-            });
-
-            if records.len() >= limit {
-                break;
-            }
-        }
-
-        records.sort_by(|a, b| b.synced_at.cmp(&a.synced_at));
-
-        Ok(records)
-    }
-
     // Helper methods
     fn file_key(&self, path: &Path) -> Vec<u8> {
         format!("file:{}", path.display()).into_bytes()
@@ -241,18 +177,6 @@ impl StateManager {
     fn pending_key(&self, path: &Path) -> Vec<u8> {
         format!("pending:{}", path.display()).into_bytes()
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SyncRecord {
-    pub id: String,
-    pub source_path: String,
-    pub target_drive: String,
-    pub target_path: String,
-    pub file_type: String,
-    pub category: String,
-    pub file_hash: String,
-    pub synced_at: String,
 }
 
 #[derive(Debug, Default)]

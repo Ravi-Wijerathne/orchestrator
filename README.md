@@ -7,64 +7,25 @@ Automatic file synchronization across multiple storage devices with intelligent 
 - **Intelligent File Classification**: Detects file types using magic bytes (MIME types)
 - **Automatic Syncing**: Real-time file watching and synchronization
 - **Pending Queue**: Queues files when drives are offline, syncs when reconnected
-- **GUI & CLI**: Graphical interface or command-line
 - **Smart State Management**: BLAKE3 hashing to avoid duplicates
 - **Cross-Platform**: Windows, Linux, macOS
 
 ## Prerequisites
 
 - Rust 1.70+
-- For GUI: Node.js 18+ and npm
 
 ## Installation
-
-### Option 1: CLI Only (Recommended for beginners)
 
 ```bash
 # Clone and setup
 git clone https://github.com/Ravi-Wijerathne/orchestrator.git
 cd orchestrator
 
-# Run the setup script - handles everything automatically
-./start-cli.sh
+# Run the setup script
+./start.sh
 
-# The script will:
-# - Check dependencies
-# - Build the project
-# - Offer to install globally
-# After installation, use 'fo' command anywhere
-```
-
-### Option 2: GUI Version (Full featured)
-
-```bash
-# Clone the repository
-git clone https://github.com/Ravi-Wijerathne/orchestrator.git
-cd orchestrator
-
-# Run complete GUI setup - one command does it all
-./complete-setup.sh
-
-# This script will:
-# - Install Node.js dependencies
-# - Generate icons
-# - Build the project with GUI features
-# - Create the binary in target/release/
-
-# Launch the GUI anytime with:
-./start-gui.sh
-```
-
-### Option 3: Manual Build
-
-```bash
-# CLI only
+# Or build manually
 cargo build --release
-
-# GUI version
-./setup-gui.sh              # Install frontend dependencies
-./generate-icons.sh         # Generate app icons (optional)
-cargo build --features gui --release
 
 # Install globally (optional)
 cargo install --path .
