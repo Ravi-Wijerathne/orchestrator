@@ -88,7 +88,7 @@ impl FileOrchestratorApp {
     }
     
     fn show_dashboard(&mut self, ui: &mut egui::Ui) {
-        ui.heading("📊 Dashboard");
+        ui.heading("Dashboard");
         ui.add_space(10.0);
         
         // Stats
@@ -96,7 +96,7 @@ impl FileOrchestratorApp {
             ui.group(|ui| {
                 ui.set_min_width(200.0);
                 ui.vertical(|ui| {
-                    ui.label(egui::RichText::new("⏳ Pending Syncs").size(14.0));
+                    ui.label(egui::RichText::new("Pending Syncs").size(14.0));
                     ui.label(egui::RichText::new(self.pending_count.to_string()).size(24.0).strong());
                 });
             });
@@ -104,7 +104,7 @@ impl FileOrchestratorApp {
             ui.group(|ui| {
                 ui.set_min_width(200.0);
                 ui.vertical(|ui| {
-                    ui.label(egui::RichText::new("💾 Registered Drives").size(14.0));
+                    ui.label(egui::RichText::new("Registered Drives").size(14.0));
                     ui.label(egui::RichText::new(self.drives_status.len().to_string()).size(24.0).strong());
                 });
             });
@@ -121,10 +121,9 @@ impl FileOrchestratorApp {
         } else {
             for (_uuid, label, connected) in &self.drives_status {
                 ui.horizontal(|ui| {
-                    let status_icon = if *connected { "🟢" } else { "🔴" };
-                    let status_text = if *connected { "Connected" } else { "Disconnected" };
+                    let status_text = if *connected { "[Connected]" } else { "[Disconnected]" };
                     
-                    ui.label(format!("{} {}", status_icon, label));
+                    ui.label(format!("{} {}", status_text, label));
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         ui.label(status_text);
                     });
@@ -135,14 +134,14 @@ impl FileOrchestratorApp {
         
         ui.add_space(20.0);
         
-        if ui.button("🔄 Refresh Status").clicked() {
+        if ui.button("Refresh Status").clicked() {
             self.update_dashboard_stats();
             self.status_message = Some("Status refreshed".to_string());
         }
     }
     
     fn show_drive_manager(&mut self, ui: &mut egui::Ui) {
-        ui.heading("💽 Drive Manager");
+        ui.heading("Drive Manager");
         ui.add_space(10.0);
         
         // Registered drives list
@@ -158,7 +157,7 @@ impl FileOrchestratorApp {
             } else {
                 for (_uuid, drive_config) in &config.drives {
                     ui.horizontal(|ui| {
-                        ui.label(format!("📀 {}", drive_config.label));
+                        ui.label(format!("Drive: {}", drive_config.label));
                         ui.label(format!("Category: {}", drive_config.target));
                         if let Some(path) = &drive_config.path {
                             ui.label(format!("Path: {}", path.display()));
@@ -195,7 +194,7 @@ impl FileOrchestratorApp {
             });
             
             ui.horizontal(|ui| {
-                if ui.button("📂 Select Drive Path").clicked() {
+                if ui.button("Select Drive Path").clicked() {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         self.selected_path = Some(path);
                     }
@@ -208,7 +207,7 @@ impl FileOrchestratorApp {
             
             ui.add_space(10.0);
             
-            if ui.button("➕ Register Drive").clicked() {
+            if ui.button("Register Drive").clicked() {
                 if self.new_drive_label.is_empty() {
                     self.error_message = Some("Label cannot be empty".to_string());
                 } else if self.selected_path.is_none() {
@@ -243,7 +242,7 @@ impl FileOrchestratorApp {
     }
     
     fn show_settings(&mut self, ui: &mut egui::Ui) {
-        ui.heading("⚙️ Settings");
+        ui.heading("Settings");
         ui.add_space(10.0);
         
         let config = self.config.lock().unwrap();
@@ -280,18 +279,18 @@ impl eframe::App for FileOrchestratorApp {
         // Top panel with navigation
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.heading("🗂️ File Orchestrator");
+                ui.heading("File Orchestrator");
                 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.selectable_label(self.current_view == AppView::Settings, "⚙️ Settings").clicked() {
+                    if ui.selectable_label(self.current_view == AppView::Settings, "Settings").clicked() {
                         self.current_view = AppView::Settings;
                     }
                     
-                    if ui.selectable_label(self.current_view == AppView::DriveManager, "💽 Drives").clicked() {
+                    if ui.selectable_label(self.current_view == AppView::DriveManager, "Drives").clicked() {
                         self.current_view = AppView::DriveManager;
                     }
                     
-                    if ui.selectable_label(self.current_view == AppView::Dashboard, "📊 Dashboard").clicked() {
+                    if ui.selectable_label(self.current_view == AppView::Dashboard, "Dashboard").clicked() {
                         self.current_view = AppView::Dashboard;
                         self.update_dashboard_stats();
                     }
@@ -303,15 +302,15 @@ impl eframe::App for FileOrchestratorApp {
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if let Some(ref msg) = self.status_message {
-                    ui.label(egui::RichText::new(format!("✓ {}", msg)).color(egui::Color32::GREEN));
-                    if ui.button("✕").clicked() {
+                    ui.label(egui::RichText::new(format!("[OK] {}", msg)).color(egui::Color32::GREEN));
+                    if ui.button("X").clicked() {
                         self.status_message = None;
                     }
                 }
                 
                 if let Some(ref msg) = self.error_message {
-                    ui.label(egui::RichText::new(format!("✗ {}", msg)).color(egui::Color32::RED));
-                    if ui.button("✕").clicked() {
+                    ui.label(egui::RichText::new(format!("[ERROR] {}", msg)).color(egui::Color32::RED));
+                    if ui.button("X").clicked() {
                         self.error_message = None;
                     }
                 }
