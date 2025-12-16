@@ -273,7 +273,7 @@ impl FileOrchestratorApp {
                     let save_result = {
                         let mut config = self.config.lock().unwrap();
                         config.drives.insert(uuid.clone(), new_drive);
-                        config.save("config.toml")
+                        config.save(&self.config_path)
                     };
                     
                     if let Err(e) = save_result {
@@ -299,7 +299,7 @@ impl FileOrchestratorApp {
         
         if let Some(drive) = config.drives.remove(uuid) {
             // Save the updated config
-            let save_result = config.save("config.toml");
+            let save_result = config.save(&self.config_path);
             drop(config);
             
             if let Err(e) = save_result {
