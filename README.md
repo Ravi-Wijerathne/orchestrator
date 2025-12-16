@@ -35,8 +35,20 @@ This will:
 
 Start GUI and use the interface:
 - **Dashboard**: View status, Start/Stop watcher
-- **Drive Manager**: Register USB drives
+- **Drive Manager**: Register/Unregister USB drives
 - **Settings**: View configuration
+
+Launch GUI using one of these methods:
+```bash
+# Method 1: Using start script (recommended)
+./start.sh
+
+# Method 2: Using --gui flag
+./target/release/fo --gui
+
+# Method 3: Using gui subcommand
+./target/release/fo gui
+```
 
 ### CLI Mode
 

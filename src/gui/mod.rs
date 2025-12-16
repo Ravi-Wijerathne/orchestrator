@@ -25,6 +25,9 @@ pub struct FileOrchestratorApp {
     status_message: Option<String>,
     error_message: Option<String>,
     
+    // Drive to remove (uuid)
+    drive_to_remove: Option<String>,
+    
     // Watcher control
     watcher_running: Arc<Mutex<bool>>,
     watcher_handle: Arc<Mutex<Option<std::process::Child>>>,
@@ -60,6 +63,7 @@ impl FileOrchestratorApp {
             selected_path: None,
             status_message: None,
             error_message: None,
+            drive_to_remove: None,
             watcher_running: Arc::new(Mutex::new(false)),
             watcher_handle: Arc::new(Mutex::new(None)),
             config_path,
@@ -190,13 +194,22 @@ impl FileOrchestratorApp {
             if config.drives.is_empty() {
                 ui.label("No drives registered yet.");
             } else {
-                for (_uuid, drive_config) in &config.drives {
+                let drives: Vec<_> = config.drives.iter().map(|(uuid, drive)| (uuid.clone(), drive.clone())).collect();
+                drop(config);
+                
+                for (uuid, drive_config) in drives {
                     ui.horizontal(|ui| {
                         ui.label(format!("Drive: {}", drive_config.label));
                         ui.label(format!("Category: {}", drive_config.target));
                         if let Some(path) = &drive_config.path {
                             ui.label(format!("Path: {}", path.display()));
                         }
+                        
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if ui.button(egui::RichText::new("🗑 Remove").color(egui::Color32::RED)).clicked() {
+                                self.drive_to_remove = Some(uuid.clone());
+                            }
+                        });
                     });
                     ui.separator();
                 }
@@ -274,6 +287,40 @@ impl FileOrchestratorApp {
                 }
             }
         });
+        
+        // Handle drive removal if requested
+        if let Some(uuid) = self.drive_to_remove.take() {
+            self.unregister_drive(&uuid);
+        }
+    }
+    
+    fn unregister_drive(&mut self, uuid: &str) {
+        let mut config = self.config.lock().unwrap();
+        
+        if let Some(drive) = config.drives.remove(uuid) {
+            // Save the updated config
+            let save_result = config.save("config.toml");
+            drop(config);
+            
+            if let Err(e) = save_result {
+                self.error_message = Some(format!("Failed to save config: {}", e));
+            } else {
+                // Clean up pending syncs for this drive
+                let cleanup_result = {
+                    let state = self.state_manager.lock().unwrap();
+                    state.cleanup_drive_data(uuid)
+                };
+                
+                if let Err(e) = cleanup_result {
+                    self.error_message = Some(format!("Warning: Failed to cleanup drive data: {}", e));
+                } else {
+                    self.status_message = Some(format!("Drive '{}' unregistered successfully", drive.label));
+                    self.update_dashboard_stats();
+                }
+            }
+        } else {
+            self.error_message = Some("Drive not found".to_string());
+        }
     }
     
     fn start_watcher(&mut self) {

@@ -81,6 +81,30 @@ impl StateManager {
         Ok(())
     }
 
+    /// Remove all pending syncs for a specific drive
+    #[allow(dead_code)]
+    pub fn cleanup_drive_data(&self, drive_uuid: &str) -> Result<()> {
+        let prefix = format!("pending:");
+        let mut keys_to_remove = Vec::new();
+
+        for item in self.db.scan_prefix(prefix.as_bytes()) {
+            let (key, value) = item?;
+            let pending: PendingSync = serde_json::from_slice(&value)?;
+            
+            if pending.target_drive == drive_uuid {
+                keys_to_remove.push(key);
+            }
+        }
+
+        // Remove all matching keys
+        for key in keys_to_remove {
+            self.db.remove(key)?;
+        }
+        
+        self.db.flush()?;
+        Ok(())
+    }
+
     /// Get all pending syncs for a specific drive
     pub fn get_pending_syncs(&self, drive_uuid: &str) -> Result<Vec<PendingSync>> {
         let prefix = format!("pending:");
