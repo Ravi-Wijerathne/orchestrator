@@ -82,6 +82,10 @@ pub enum Commands {
 
     /// Validate configuration file
     Validate,
+
+    #[cfg(feature = "gui")]
+    /// Launch the graphical user interface
+    Gui,
 }
 
 impl Cli {

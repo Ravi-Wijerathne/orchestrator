@@ -26,13 +26,13 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 fn main() -> Result<()> {
-    // Check for --gui flag
+    // Check for --gui flag before CLI parsing (for backward compatibility)
     let args: Vec<String> = std::env::args().collect();
     
     #[cfg(feature = "gui")]
     {
-        if args.contains(&"--gui".to_string()) {
-            // Run GUI mode
+        if args.len() > 1 && args[1] == "--gui" {
+            // Run GUI mode with old-style flag
             let config_path = args.iter()
                 .position(|arg| arg == "--config")
                 .and_then(|i| args.get(i + 1))
@@ -95,8 +95,12 @@ async fn run_cli() -> Result<()> {
         }
         Commands::Validate => {
             cmd_validate(&cli.config)?;
-        }
-    }
+        }        #[cfg(feature = "gui")]
+        Commands::Gui => {
+            let config_path = cli.config.to_string_lossy().to_string();
+            let db_path = cli.db.to_string_lossy().to_string();
+            return gui::run_gui(config_path, db_path);
+        }    }
 
     Ok(())
 }
