@@ -42,6 +42,10 @@ File Orchestrator exists to solve the problem of managing and backing up files a
 2. **Check dependencies**
    ```bash
    ./check-deps.sh
+
+      OR
+
+   python check-deps.py
    ```
 
 3. **Build the project**
@@ -66,6 +70,10 @@ File Orchestrator exists to solve the problem of managing and backing up files a
 Run the start script which will guide you through initial setup:
 ```bash
 ./start.sh
+
+   OR
+
+python start.py
 ```
 
 This will:
