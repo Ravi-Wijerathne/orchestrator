@@ -36,7 +36,7 @@ def print_header():
 
 def build_binary():
     """Build the binary with GUI support"""
-    print(f"{RED}❌ Binary not found!{NC}")
+    print(f"{BLUE}📦 Binary not found, building now...{NC}")
     print(f"{YELLOW}Building File Orchestrator with GUI support...{NC}")
     print()
     
