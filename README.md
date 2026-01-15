@@ -40,13 +40,18 @@ File Orchestrator exists to solve the problem of managing and backing up files a
    ```
 
 2. **Check dependencies**
+   
+   **On Linux/macOS:**
    ```bash
    ./check-deps.sh
-
-      OR
-
+   ```
+   
+   **On Windows (or cross-platform):**
+   ```bash
    python check-deps.py
    ```
+   
+   Both scripts verify that required dependencies (Rust, GTK3, etc.) are installed.
 
 3. **Build the project**
    ```bash
@@ -68,28 +73,34 @@ File Orchestrator exists to solve the problem of managing and backing up files a
 ### First-Time Setup
 
 Run the start script which will guide you through initial setup:
+
+**On Linux/macOS:**
 ```bash
 ./start.sh
+```
 
-   OR
-
+**On Windows (or cross-platform):**
+```bash
 python start.py
 ```
 
-This will:
-1. Build the project if needed
-2. Prompt for your storage folder path
-3. Launch the GUI interface
+Both scripts perform the same operations:
+1. Build the project if needed (requires Cargo)
+2. Prompt for your storage folder path on first run
+3. Create the configuration file automatically
+4. Launch the GUI interface
 
 ### GUI Mode
 
 Launch the graphical interface:
 ```bash
 # Using start script (recommended)
-./start.sh
+./start.sh          # Linux/macOS
+python start.py     # Windows or cross-platform
 
 # Direct execution
-./target/release/fo --gui
+./target/release/fo --gui        # Linux/macOS
+.\target\release\fo.exe --gui    # Windows
 
 # Or using gui subcommand
 ./target/release/fo gui
@@ -216,8 +227,10 @@ orchestrator/
 ├── Cargo.toml               # Rust dependencies
 ├── config.toml              # Runtime configuration
 ├── config.example.toml      # Example configuration
-├── check-deps.sh            # Dependency checker script
-├── start.sh                 # Startup script
+├── check-deps.sh            # Dependency checker script (Linux/macOS)
+├── check-deps.py            # Dependency checker script (cross-platform)
+├── start.sh                 # Startup script (Linux/macOS)
+├── start.py                 # Startup script (Windows/cross-platform)
 └── README.md                # This file
 ```
 
@@ -261,7 +274,7 @@ cargo test --test '*'
 - [ ] **Mobile notifications** - Push notifications to phone
 - [ ] **Compression options** - Automatic compression before sync
 - [ ] **Encryption support** - Encrypt files on USB drives
-- [ ] **Multi-platform support** - Windows and macOS compatibility
+- [x] **Multi-platform support** - Windows and macOS compatibility (via Python scripts)
 - [ ] **Advanced filtering** - Custom rules based on file size, date, etc.
 - [ ] **Sync profiles** - Different sync strategies for different use cases
 
