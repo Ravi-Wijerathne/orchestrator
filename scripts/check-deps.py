@@ -314,7 +314,7 @@ def print_summary():
         print()
         print(f"{Colors.BLUE}Next step:{Colors.NC}")
         if platform.system() == 'Windows':
-            print(f"  Run: {Colors.BOLD}python start.py{Colors.NC}")
+            print(f"  Run: {Colors.BOLD}python scripts/start.py{Colors.NC}")
         else:
             print(f"  Run: {Colors.BOLD}./start.sh{Colors.NC}")
         return 0

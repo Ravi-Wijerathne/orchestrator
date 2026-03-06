@@ -214,7 +214,7 @@ if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
     echo -e "${GREEN}✨ All checks passed! You're ready to install.${NC}"
     echo ""
     echo -e "${BLUE}Next step:${NC}"
-    echo -e "  Run: ${BOLD}./start.sh${NC}"
+    echo -e "  Run: ${BOLD}../scripts/start.sh${NC}"
     exit 0
 elif [ $ERRORS -eq 0 ]; then
     echo -e "${YELLOW}⚠️  ${WARNINGS} warning(s) found${NC}"
@@ -223,7 +223,7 @@ elif [ $ERRORS -eq 0 ]; then
     echo -e "${BLUE}You can proceed, but some features may be limited.${NC}"
     echo ""
     echo -e "${BLUE}Next step:${NC}"
-    echo -e "  Run: ${BOLD}./start.sh${NC}"
+    echo -e "  Run: ${BOLD}../scripts/start.sh${NC}"
     exit 0
 else
     echo -e "${RED}✗ ${ERRORS} error(s) found${NC}"
