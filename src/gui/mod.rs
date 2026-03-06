@@ -156,7 +156,7 @@ impl FileOrchestratorApp {
         let is_running = *self.watcher_running.lock().unwrap();
         
         ui.horizontal(|ui| {
-            let status_color = if is_running { egui::Color32::GREEN } else { egui::Color32::RED };
+            let status_color = if is_running { egui::Color32::DARK_GREEN } else { egui::Color32::DARK_RED };
             let status_text = if is_running { "[RUNNING]" } else { "[STOPPED]" };
             ui.label(egui::RichText::new(status_text).color(status_color).strong());
             
@@ -366,16 +366,60 @@ impl FileOrchestratorApp {
         ui.heading("Settings");
         ui.add_space(10.0);
         
-        let config = self.config.lock().unwrap();
+        let source_exists = self.config.lock().unwrap().source.path.exists();
+        let current_path = self.config.lock().unwrap().source.path.display().to_string();
         
         ui.group(|ui| {
             ui.label(egui::RichText::new("Source Directory").strong());
-            ui.label(format!("Path: {}", config.source.path.display()));
-            ui.label("Edit config.toml to change the source directory.");
+            ui.separator();
+            
+            ui.horizontal(|ui| {
+                ui.label("Path:");
+                if source_exists {
+                    ui.label(egui::RichText::new(&current_path).color(egui::Color32::DARK_GREEN));
+                } else {
+                    ui.label(egui::RichText::new(&current_path).color(egui::Color32::DARK_RED));
+                    ui.label(egui::RichText::new("(does not exist)").color(egui::Color32::DARK_RED));
+                }
+            });
+            
+            ui.add_space(5.0);
+            
+            ui.horizontal(|ui| {
+                if ui.button("📂 Change Source Path").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().pick_folder() {
+                        let mut config = self.config.lock().unwrap();
+                        config.source.path = path;
+                        if let Err(e) = config.save(&self.config_path) {
+                            drop(config);
+                            self.error_message = Some(format!("Failed to save config: {}", e));
+                        } else {
+                            let p = config.source.path.display().to_string();
+                            drop(config);
+                            self.status_message = Some(format!("Source path updated to: {}", p));
+                        }
+                    }
+                }
+                
+                if !source_exists {
+                    if ui.button("📁 Create This Directory").clicked() {
+                        let path = self.config.lock().unwrap().source.path.clone();
+                        match std::fs::create_dir_all(&path) {
+                            Ok(_) => {
+                                self.status_message = Some(format!("Directory created: {}", path.display()));
+                            }
+                            Err(e) => {
+                                self.error_message = Some(format!("Failed to create directory: {}", e));
+                            }
+                        }
+                    }
+                }
+            });
         });
         
         ui.add_space(20.0);
         
+        let config = self.config.lock().unwrap();
         ui.group(|ui| {
             ui.label(egui::RichText::new("File Rules").strong());
             ui.separator();
@@ -433,14 +477,14 @@ impl eframe::App for FileOrchestratorApp {
         egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 if let Some(ref msg) = self.status_message {
-                    ui.label(egui::RichText::new(format!("[OK] {}", msg)).color(egui::Color32::GREEN));
+                    ui.label(egui::RichText::new(format!("[OK] {}", msg)).color(egui::Color32::DARK_GREEN));
                     if ui.button("X").clicked() {
                         self.status_message = None;
                     }
                 }
                 
                 if let Some(ref msg) = self.error_message {
-                    ui.label(egui::RichText::new(format!("[ERROR] {}", msg)).color(egui::Color32::RED));
+                    ui.label(egui::RichText::new(format!("[ERROR] {}", msg)).color(egui::Color32::DARK_RED));
                     if ui.button("X").clicked() {
                         self.error_message = None;
                     }
@@ -450,6 +494,18 @@ impl eframe::App for FileOrchestratorApp {
         
         // Central panel with main content
         egui::CentralPanel::default().show(ctx, |ui| {
+            // Show warning banner if source path doesn't exist
+            let source_exists = self.config.lock().unwrap().source.path.exists();
+            if !source_exists {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("⚠ Source path does not exist. Go to Settings to fix it.").color(egui::Color32::from_rgb(180, 80, 0)).strong());
+                    if ui.button("Go to Settings").clicked() {
+                        self.current_view = AppView::Settings;
+                    }
+                });
+                ui.separator();
+            }
+            
             egui::ScrollArea::vertical().show(ui, |ui| {
                 match self.current_view {
                     AppView::Dashboard => self.show_dashboard(ui),
@@ -462,7 +518,7 @@ impl eframe::App for FileOrchestratorApp {
 }
 
 pub fn run_gui(config_path: String, db_path: String) -> Result<()> {
-    let config = Config::load(&config_path)?;
+    let config = Config::load_lenient(&config_path)?;
     let state_manager = StateManager::new(&db_path)?;
     
     let config_path_clone = config_path.clone();

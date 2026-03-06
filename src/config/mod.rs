@@ -44,6 +44,15 @@ impl Config {
         Ok(config)
     }
 
+    /// Load configuration without validating paths (for GUI mode)
+    pub fn load_lenient<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let content = fs::read_to_string(path)
+            .map_err(|e| OrchestratorError::Config(format!("Failed to read config file: {}", e)))?;
+        
+        let config: Config = toml::from_str(&content)?;
+        Ok(config)
+    }
+
     /// Save configuration to a TOML file
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<()> {
         let content = toml::to_string_pretty(self)?;
