@@ -26,8 +26,8 @@ Smart file synchronization system that automatically watches a folder and syncs 
 
 2. **Check dependencies**
    ```bash
-   ./check-deps.sh          # Linux/macOS
-   python check-deps.py     # Windows
+   ./scripts/check-deps.sh          # Linux/macOS
+   python scripts/check-deps.py     # Windows
    ```
 
 3. **Build the project**
@@ -37,8 +37,8 @@ Smart file synchronization system that automatically watches a folder and syncs 
 
 4. **Run first-time setup**
    ```bash
-   ./start.sh          # Linux/macOS
-   python start.py     # Windows
+   ./scripts/start.sh          # Linux/macOS
+   python scripts/start.py     # Windows
    ```
    This will prompt for your storage folder path and create the configuration file.
 
