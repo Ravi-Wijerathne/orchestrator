@@ -18,14 +18,15 @@ YELLOW = '\033[1;33m'
 BLUE = '\033[0;34m'
 NC = '\033[0m'  # No Color
 
-# Get script directory
+# Get project root directory (parent of scripts/)
 SCRIPT_DIR = Path(__file__).parent.resolve()
-CONFIG_FILE = SCRIPT_DIR / "config.toml"
-BINARY = SCRIPT_DIR / "target" / "release" / "fo"
+PROJECT_DIR = SCRIPT_DIR.parent
+CONFIG_FILE = PROJECT_DIR / "config.toml"
+BINARY = PROJECT_DIR / "target" / "release" / "fo"
 
 # Adjust for Windows
 if sys.platform == "win32":
-    BINARY = SCRIPT_DIR / "target" / "release" / "fo.exe"
+    BINARY = PROJECT_DIR / "target" / "release" / "fo.exe"
 
 def print_header():
     """Print the welcome header"""
@@ -43,7 +44,7 @@ def build_binary():
     try:
         subprocess.run(
             ["cargo", "build", "--features", "gui", "--release"],
-            cwd=SCRIPT_DIR,
+            cwd=PROJECT_DIR,
             check=True
         )
         print()
@@ -114,7 +115,7 @@ def init_config(storage_path):
         # Initialize config using the binary
         subprocess.run(
             [str(BINARY), "init"],
-            cwd=SCRIPT_DIR,
+            cwd=PROJECT_DIR,
             check=True
         )
         
@@ -163,7 +164,7 @@ def launch_gui():
     try:
         subprocess.run(
             [str(BINARY), "--gui"],
-            cwd=SCRIPT_DIR,
+            cwd=PROJECT_DIR,
             check=False
         )
     except Exception as e:
