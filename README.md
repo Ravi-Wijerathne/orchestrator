@@ -81,6 +81,38 @@ documents = ["pdf", "docx", "txt"]
 archives = ["zip", "rar", "7z"]
 ```
 
+## Testing
+
+Run all tests:
+```bash
+cargo test
+```
+
+Run tests with output:
+```bash
+cargo test -- --nocapture
+```
+
+Run specific module tests:
+```bash
+cargo test classifier      # Test file classification
+cargo test config          # Test configuration
+cargo test state           # Test state management
+cargo test drive          # Test drive detection
+cargo test watcher         # Test file watcher
+cargo test cli             # Test CLI parsing
+```
+
+Run tests with verbose output:
+```bash
+cargo test -v
+```
+
+Run tests and show ignored tests:
+```bash
+cargo test -- --ignored
+```
+
 ## License
 
 Dual-licensed under MIT and Apache License 2.0
