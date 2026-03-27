@@ -1,6 +1,6 @@
-use sysinfo::Disks;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use sysinfo::Disks;
 
 #[derive(Debug, Clone)]
 pub struct DriveInfo {
@@ -21,7 +21,7 @@ impl DriveDetector {
     pub fn new() -> Self {
         let mut disks = Disks::new_with_refreshed_list();
         disks.refresh_list();
-        
+
         Self { disks }
     }
 
@@ -64,13 +64,15 @@ impl DriveDetector {
     /// Find drive by label/name (case-insensitive partial match)
     pub fn find_drive_by_label(&self, label: &str) -> Option<DriveInfo> {
         let label_lower = label.to_lowercase();
-        
-        self.get_all_drives()
-            .into_iter()
-            .find(|drive| {
-                drive.name.to_lowercase().contains(&label_lower) ||
-                drive.mount_point.to_string_lossy().to_lowercase().contains(&label_lower)
-            })
+
+        self.get_all_drives().into_iter().find(|drive| {
+            drive.name.to_lowercase().contains(&label_lower)
+                || drive
+                    .mount_point
+                    .to_string_lossy()
+                    .to_lowercase()
+                    .contains(&label_lower)
+        })
     }
 
     /// Get drive info for a specific path
@@ -93,7 +95,7 @@ impl DriveDetector {
         drive.name.hash(&mut hasher);
         drive.mount_point.hash(&mut hasher);
         drive.total_space.hash(&mut hasher);
-        
+
         format!("drive-{:x}", hasher.finish())
     }
 
@@ -164,7 +166,7 @@ mod tests {
     fn test_drive_detector_creation() {
         let detector = DriveDetector::new();
         let drives = detector.get_all_drives();
-        
+
         // Should detect at least the system drive
         assert!(!drives.is_empty(), "Should detect at least one drive");
     }

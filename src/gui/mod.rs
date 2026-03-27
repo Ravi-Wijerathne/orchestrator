@@ -77,9 +77,9 @@ enum AppView {
 impl AppView {
     fn icon(&self) -> &str {
         match self {
-            AppView::Dashboard => "📊",
-            AppView::DriveManager => "💾",
-            AppView::Settings => "⚙",
+            AppView::Dashboard => "[DB]",
+            AppView::DriveManager => "[DR]",
+            AppView::Settings => "[ST]",
         }
     }
     fn label(&self) -> &str {
@@ -240,7 +240,7 @@ impl FileOrchestratorApp {
 
     // ── Dashboard ──────────────────────────────────────────────────────
     fn show_dashboard(&mut self, ui: &mut egui::Ui) {
-        section_heading(ui, "📊", "Dashboard");
+        section_heading(ui, "[DB]", "Dashboard");
         ui.add_space(8.0);
 
         // Stat cards row
@@ -267,7 +267,7 @@ impl FileOrchestratorApp {
         // Drive status card
         card_frame(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("💾").size(16.0));
+                ui.label(egui::RichText::new("[DR]").size(16.0));
                 ui.label(
                     egui::RichText::new("Drive Status")
                         .size(15.0)
@@ -341,7 +341,7 @@ impl FileOrchestratorApp {
             let is_running = *self.watcher_running.lock().unwrap();
 
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("👁").size(16.0));
+                ui.label(egui::RichText::new("[FW]").size(16.0));
                 ui.label(
                     egui::RichText::new("File Watcher")
                         .size(15.0)
@@ -350,9 +350,9 @@ impl FileOrchestratorApp {
                 );
                 ui.add_space(8.0);
                 if is_running {
-                    pill_badge(ui, "● Running", Theme::SUCCESS, Theme::SUCCESS_BG);
+                    pill_badge(ui, "Running", Theme::SUCCESS, Theme::SUCCESS_BG);
                 } else {
-                    pill_badge(ui, "● Stopped", Theme::DANGER, Theme::DANGER_BG);
+                    pill_badge(ui, "Stopped", Theme::DANGER, Theme::DANGER_BG);
                 }
             });
 
@@ -360,16 +360,16 @@ impl FileOrchestratorApp {
 
             ui.horizontal(|ui| {
                 if is_running {
-                    if styled_button(ui, "⏹  Stop Watcher", Theme::DANGER, Theme::DANGER).clicked() {
+                    if styled_button(ui, "Stop Watcher", Theme::DANGER, Theme::DANGER).clicked() {
                         self.stop_watcher();
                     }
                 } else {
-                    if styled_button(ui, "▶  Start Watcher", Theme::SUCCESS, Theme::SUCCESS).clicked() {
+                    if styled_button(ui, "Start Watcher", Theme::SUCCESS, Theme::SUCCESS).clicked() {
                         self.start_watcher();
                     }
                 }
                 ui.add_space(8.0);
-                if styled_button(ui, "↻  Refresh Status", Theme::ACCENT, Theme::ACCENT_HOVER).clicked() {
+                if styled_button(ui, "Refresh Status", Theme::ACCENT, Theme::ACCENT_HOVER).clicked() {
                     self.update_dashboard_stats();
                     self.status_message = Some("Status refreshed".to_string());
                 }
@@ -379,7 +379,7 @@ impl FileOrchestratorApp {
 
     // ── Drive Manager ──────────────────────────────────────────────────
     fn show_drive_manager(&mut self, ui: &mut egui::Ui) {
-        section_heading(ui, "💾", "Drive Manager");
+        section_heading(ui, "[DR]", "Drive Manager");
         ui.add_space(8.0);
 
         // Registered drives card
@@ -396,7 +396,7 @@ impl FileOrchestratorApp {
             if config.drives.is_empty() {
                 ui.add_space(20.0);
                 ui.vertical_centered(|ui| {
-                    ui.label(egui::RichText::new("📭").size(36.0));
+                    ui.label(egui::RichText::new("[--]").size(24.0));
                     ui.add_space(8.0);
                     ui.label(
                         egui::RichText::new("No drives registered yet")
@@ -427,7 +427,7 @@ impl FileOrchestratorApp {
                             ui.set_min_width(ui.available_width());
                             ui.horizontal(|ui| {
                                 // Drive icon
-                                ui.label(egui::RichText::new("💾").size(22.0));
+                                ui.label(egui::RichText::new("[DR]").size(18.0));
                                 ui.add_space(8.0);
                                 ui.vertical(|ui| {
                                     ui.label(
@@ -452,7 +452,7 @@ impl FileOrchestratorApp {
                                 ui.with_layout(
                                     egui::Layout::right_to_left(egui::Align::Center),
                                     |ui| {
-                                        if styled_button(ui, "🗑  Remove", Theme::DANGER, Theme::DANGER)
+                                        if styled_button(ui, "Remove", Theme::DANGER, Theme::DANGER)
                                             .clicked()
                                         {
                                             self.drive_to_remove = Some(uuid.clone());
@@ -474,7 +474,7 @@ impl FileOrchestratorApp {
         // Add new drive card
         card_frame(ui, |ui| {
             ui.label(
-                egui::RichText::new("➕  Add New Drive")
+                egui::RichText::new("+ Add New Drive")
                     .size(15.0)
                     .strong()
                     .color(Theme::TEXT_PRIMARY),
@@ -510,11 +510,11 @@ impl FileOrchestratorApp {
                         .width(280.0)
                         .show_ui(ui, |ui| {
                             for (val, label) in [
-                                ("images", "🖼  Images"),
-                                ("videos", "🎬  Videos"),
-                                ("music", "🎵  Music"),
-                                ("documents", "📄  Documents"),
-                                ("archives", "📦  Archives"),
+                                ("images", "Images"),
+                                ("videos", "Videos"),
+                                ("music", "Music"),
+                                ("documents", "Documents"),
+                                ("archives", "Archives"),
                             ] {
                                 ui.selectable_value(
                                     &mut self.new_drive_category,
@@ -531,7 +531,7 @@ impl FileOrchestratorApp {
                             .color(Theme::TEXT_SECONDARY),
                     );
                     ui.horizontal(|ui| {
-                        if styled_button(ui, "📂  Browse…", Theme::ACCENT, Theme::ACCENT_HOVER)
+                        if styled_button(ui, "Browse...", Theme::ACCENT, Theme::ACCENT_HOVER)
                             .clicked()
                         {
                             if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -552,7 +552,7 @@ impl FileOrchestratorApp {
 
             ui.add_space(16.0);
 
-            if styled_button(ui, "✚  Register Drive", Theme::ACCENT, Theme::ACCENT_HOVER).clicked() {
+            if styled_button(ui, "Register Drive", Theme::ACCENT, Theme::ACCENT_HOVER).clicked() {
                 if self.new_drive_label.is_empty() {
                     self.error_message = Some("Label cannot be empty".to_string());
                 } else if self.selected_path.is_none() {
@@ -662,7 +662,7 @@ impl FileOrchestratorApp {
 
     // ── Settings ───────────────────────────────────────────────────────
     fn show_settings(&mut self, ui: &mut egui::Ui) {
-        section_heading(ui, "⚙", "Settings");
+        section_heading(ui, "[ST]", "Settings");
         ui.add_space(8.0);
 
         let source_exists = self.config.lock().unwrap().source.path.exists();
@@ -671,7 +671,7 @@ impl FileOrchestratorApp {
         // Source directory card
         card_frame(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("📂").size(16.0));
+                ui.label(egui::RichText::new("[DIR]").size(16.0));
                 ui.label(
                     egui::RichText::new("Source Directory")
                         .size(15.0)
@@ -720,7 +720,7 @@ impl FileOrchestratorApp {
             ui.add_space(12.0);
 
             ui.horizontal(|ui| {
-                if styled_button(ui, "📂  Change Source Path", Theme::ACCENT, Theme::ACCENT_HOVER)
+                if styled_button(ui, "Change Source Path", Theme::ACCENT, Theme::ACCENT_HOVER)
                     .clicked()
                 {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
@@ -740,7 +740,7 @@ impl FileOrchestratorApp {
 
                 if !source_exists {
                     ui.add_space(8.0);
-                    if styled_button(ui, "📁  Create This Directory", Theme::SUCCESS, Theme::SUCCESS)
+                    if styled_button(ui, "Create This Directory", Theme::SUCCESS, Theme::SUCCESS)
                         .clicked()
                     {
                         let path = self.config.lock().unwrap().source.path.clone();
@@ -765,7 +765,7 @@ impl FileOrchestratorApp {
         let config = self.config.lock().unwrap();
         card_frame(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("📋").size(16.0));
+                ui.label(egui::RichText::new("[RULES]").size(16.0));
                 ui.label(
                     egui::RichText::new("File Classification Rules")
                         .size(15.0)
@@ -777,15 +777,15 @@ impl FileOrchestratorApp {
 
             let rules: Vec<(&str, &str, Vec<&str>)> = {
                 let mut r = vec![
-                    ("🖼", "Images", config.rules.images.iter().map(|s| s.as_str()).collect()),
-                    ("🎬", "Videos", config.rules.videos.iter().map(|s| s.as_str()).collect()),
-                    ("🎵", "Music", config.rules.music.iter().map(|s| s.as_str()).collect()),
+                    ("IMG", "Images", config.rules.images.iter().map(|s| s.as_str()).collect()),
+                    ("VID", "Videos", config.rules.videos.iter().map(|s| s.as_str()).collect()),
+                    ("AUD", "Music", config.rules.music.iter().map(|s| s.as_str()).collect()),
                 ];
                 if let Some(docs) = &config.rules.documents {
-                    r.push(("📄", "Documents", docs.iter().map(|s| s.as_str()).collect()));
+                    r.push(("DOC", "Documents", docs.iter().map(|s| s.as_str()).collect()));
                 }
                 if let Some(archives) = &config.rules.archives {
-                    r.push(("📦", "Archives", archives.iter().map(|s| s.as_str()).collect()));
+                    r.push(("ARC", "Archives", archives.iter().map(|s| s.as_str()).collect()));
                 }
                 r
             };
@@ -958,7 +958,7 @@ impl eframe::App for FileOrchestratorApp {
                             .show(ui, |ui| {
                                 ui.horizontal(|ui| {
                                     ui.label(
-                                        egui::RichText::new(format!("✓  {}", msg))
+                                        egui::RichText::new(format!("OK: {}", msg))
                                             .size(12.0)
                                             .color(Theme::SUCCESS),
                                     );
@@ -966,7 +966,7 @@ impl eframe::App for FileOrchestratorApp {
                             });
                         if ui
                             .add(egui::Button::new(
-                                egui::RichText::new("✕").size(11.0).color(Theme::TEXT_SECONDARY),
+                                egui::RichText::new("x").size(11.0).color(Theme::TEXT_SECONDARY),
                             ).frame(false))
                             .clicked()
                         {
@@ -982,7 +982,7 @@ impl eframe::App for FileOrchestratorApp {
                             .show(ui, |ui| {
                                 ui.horizontal(|ui| {
                                     ui.label(
-                                        egui::RichText::new(format!("✗  {}", msg))
+                                        egui::RichText::new(format!("ERROR: {}", msg))
                                             .size(12.0)
                                             .color(Theme::DANGER),
                                     );
@@ -990,7 +990,7 @@ impl eframe::App for FileOrchestratorApp {
                             });
                         if ui
                             .add(egui::Button::new(
-                                egui::RichText::new("✕").size(11.0).color(Theme::TEXT_SECONDARY),
+                                egui::RichText::new("x").size(11.0).color(Theme::TEXT_SECONDARY),
                             ).frame(false))
                             .clicked()
                         {
@@ -1018,7 +1018,7 @@ impl eframe::App for FileOrchestratorApp {
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 ui.label(
-                                    egui::RichText::new("⚠  Source path does not exist.")
+                                    egui::RichText::new("WARNING: Source path does not exist.")
                                         .size(13.0)
                                         .color(Theme::WARNING)
                                         .strong(),
@@ -1026,7 +1026,7 @@ impl eframe::App for FileOrchestratorApp {
                                 ui.add_space(8.0);
                                 if ui
                                     .link(
-                                        egui::RichText::new("Go to Settings →")
+                                        egui::RichText::new("Go to Settings >")
                                             .size(13.0)
                                             .color(Theme::ACCENT)
                                             .strong(),
