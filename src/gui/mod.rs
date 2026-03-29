@@ -219,7 +219,7 @@ impl FileOrchestratorApp {
             let connected = if let Some(ref path) = drive_config.path {
                 detector.is_drive_connected(path)
             } else {
-                false
+                detector.find_drive_by_label(&drive_config.label).is_some()
             };
             self.drives_status.push((
                 uuid.clone(),
