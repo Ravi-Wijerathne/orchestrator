@@ -9,10 +9,16 @@ path = "src/main.rs"
 
 [features]
 default = []
+gui = ["eframe", "egui", "rfd"]
 
 [dependencies]
 # Async runtime
 tokio = { version = "1.35", features = ["full"] }
+
+# GUI dependencies (optional)
+eframe = { version = "0.24", optional = true }
+egui = { version = "0.24", optional = true }
+rfd = { version = "0.12", optional = true }
 
 # CLI interface
 clap = { version = "4.4", features = ["derive"] }
@@ -53,7 +59,14 @@ uuid = { version = "1.6", features = ["v4", "serde"] }
 futures = "0.3"
 
 # Datetime
-chrono = { version = "0.4", features = ["serde"] }
+chrono = "0.4"
 
 # Cross-platform path handling
 path-clean = "1.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+# Windows-specific dependencies
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser"] }

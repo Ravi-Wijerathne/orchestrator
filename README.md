@@ -1,67 +1,75 @@
 # File Orchestrator
 
-Automatic file synchronization across multiple storage devices with intelligent classification.
+Smart file synchronization system that automatically watches a folder and syncs files to USB drives based on categories.
 
 ## Features
 
-- **Intelligent File Classification**: Detects file types using magic bytes (MIME types)
-- **Automatic Syncing**: Real-time file watching and synchronization
-- **Pending Queue**: Queues files when drives are offline, syncs when reconnected
-- **Smart State Management**: BLAKE3 hashing to avoid duplicates
-- **Cross-Platform**: Windows, Linux, macOS
+- Automatic file classification by type (images, videos, music, documents, archives)
+- Real-time file watching with smart queue system
+- Duplicate detection using BLAKE3 hashing
+- GUI and CLI interfaces
+- USB drive management with category-based syncing
 
-## Prerequisites
+## Requirements
 
-- Rust 1.70+
+- Rust 1.70 or later
+- GTK3 libraries (for GUI mode)
+- libnotify (for notifications)
 
-## Installation
+## Setup
 
+1. Clone the repository.
+   ```bash
+   git clone https://github.com/Ravi-Wijerathne/orchestrator.git
+   cd orchestrator
+   ```
+
+2. Check dependencies.
+   ```bash
+   python scripts/check-deps.py
+   ```
+
+3. Build the project.
+   ```bash
+   cargo build --release --features gui
+   ```
+
+4. Run first-time setup.
+   ```bash
+   python scripts/start.py
+   ```
+   This will prompt for your storage folder path and create the configuration file.
+
+## Usage
+
+### GUI Mode
 ```bash
-# Clone and setup
-git clone https://github.com/Ravi-Wijerathne/orchestrator.git
-cd orchestrator
-
-# Run the setup script
-./start.sh
-
-# Or build manually
-cargo build --release
-
-# Install globally (optional)
-cargo install --path .
+./target/release/fo --gui
 ```
 
-## Quick Start
-
+### CLI Mode
 ```bash
-# 1. Initialize
 fo init
-
-# 2. Edit config.toml and set your source directory
-[source]
-path = "/path/to/your/storage"
-
-# 3. Register drives
 fo register-drive --label "MyUSB" --category images
-
-# 4. Start watching
+fo list-drives
 fo run
+fo sync-once
 ```
 
 ## Configuration
 
-Edit `config.toml`:
+Edit `config.toml` to customize:
 
 ```toml
 [source]
-path = "/path/to/MainStorage"
+path = "/home/user/MainStorage"
 
 [rules]
-images = ["jpg", "jpeg", "png", "gif"]
-videos = ["mp4", "avi", "mov", "mkv"]
-music  = ["mp3", "wav", "flac", "aac"]
-documents = ["pdf", "doc", "docx", "txt"]
-archives = ["zip", "rar", "7z", "tar"]
+images = ["jpg", "png", "gif"]
+videos = ["mp4", "mkv", "avi"]
+music = ["mp3", "flac", "wav"]
+documents = ["pdf", "docx", "txt"]
+archives = ["zip", "rar", "7z"]
 ```
 
 ## Commands
@@ -79,14 +87,28 @@ archives = ["zip", "rar", "7z", "tar"]
 | `validate` | Validate configuration |
 | `clear` | Clear sync history |
 
-## How It Works
+## Testing
 
-1. Monitors source directory for file changes
-2. Classifies files by type using magic bytes
-3. Copies to corresponding USB drive if connected
-4. Queues files if drive is offline
-5. Auto-syncs when drive reconnects
+Run all tests:
+```bash
+cargo test
+```
+
+Run tests with output:
+```bash
+cargo test -- --nocapture
+```
+
+Run specific module tests:
+```bash
+cargo test classifier
+cargo test config
+cargo test state
+cargo test drive
+cargo test watcher
+cargo test cli
+```
 
 ## License
 
-MIT License
+Dual-licensed under MIT and Apache License 2.0

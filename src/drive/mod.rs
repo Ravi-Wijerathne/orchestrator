@@ -1,6 +1,6 @@
-use sysinfo::Disks;
 use std::collections::HashMap;
 use std::path::PathBuf;
+use sysinfo::Disks;
 
 #[derive(Debug, Clone)]
 pub struct DriveInfo {
@@ -21,7 +21,7 @@ impl DriveDetector {
     pub fn new() -> Self {
         let mut disks = Disks::new_with_refreshed_list();
         disks.refresh_list();
-        
+
         Self { disks }
     }
 
@@ -58,19 +58,40 @@ impl DriveDetector {
     pub fn is_drive_connected(&self, mount_point: &PathBuf) -> bool {
         self.disks
             .iter()
-            .any(|disk| disk.mount_point() == mount_point)
+            .any(|disk| Self::path_matches_mount(mount_point, disk.mount_point()))
+    }
+
+    fn path_matches_mount(path: &std::path::Path, mount_point: &std::path::Path) -> bool {
+        if path == mount_point || path.starts_with(mount_point) {
+            return true;
+        }
+
+        // Handle Windows path shape differences like `D:` vs `D:\`.
+        let normalize = |p: &std::path::Path| {
+            p.to_string_lossy()
+                .to_lowercase()
+                .trim_end_matches(['/', '\\'])
+                .to_string()
+        };
+
+        let path_norm = normalize(path);
+        let mount_norm = normalize(mount_point);
+
+        !path_norm.is_empty() && path_norm == mount_norm
     }
 
     /// Find drive by label/name (case-insensitive partial match)
     pub fn find_drive_by_label(&self, label: &str) -> Option<DriveInfo> {
         let label_lower = label.to_lowercase();
-        
-        self.get_all_drives()
-            .into_iter()
-            .find(|drive| {
-                drive.name.to_lowercase().contains(&label_lower) ||
-                drive.mount_point.to_string_lossy().to_lowercase().contains(&label_lower)
-            })
+
+        self.get_all_drives().into_iter().find(|drive| {
+            drive.name.to_lowercase().contains(&label_lower)
+                || drive
+                    .mount_point
+                    .to_string_lossy()
+                    .to_lowercase()
+                    .contains(&label_lower)
+        })
     }
 
     /// Get drive info for a specific path
@@ -93,7 +114,7 @@ impl DriveDetector {
         drive.name.hash(&mut hasher);
         drive.mount_point.hash(&mut hasher);
         drive.total_space.hash(&mut hasher);
-        
+
         format!("drive-{:x}", hasher.finish())
     }
 
@@ -159,12 +180,13 @@ impl Default for DriveDetector {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
 
     #[test]
     fn test_drive_detector_creation() {
         let detector = DriveDetector::new();
         let drives = detector.get_all_drives();
-        
+
         // Should detect at least the system drive
         assert!(!drives.is_empty(), "Should detect at least one drive");
     }
@@ -183,5 +205,21 @@ mod tests {
         let id = DriveDetector::generate_drive_id(&drive);
         assert!(id.starts_with("drive-"));
         assert!(id.len() > 6);
+    }
+
+    #[test]
+    fn test_path_matches_mount_for_subdirectory() {
+        assert!(DriveDetector::path_matches_mount(
+            Path::new("D:/Photos"),
+            Path::new("D:/")
+        ));
+    }
+
+    #[test]
+    fn test_path_matches_mount_for_windows_root_variants() {
+        assert!(DriveDetector::path_matches_mount(
+            Path::new("D:"),
+            Path::new("D:/")
+        ));
     }
 }
