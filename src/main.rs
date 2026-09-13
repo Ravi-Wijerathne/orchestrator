@@ -27,6 +27,7 @@ use tokio::sync::Mutex;
 
 fn main() -> Result<()> {
     // Check for --gui flag before CLI parsing (for backward compatibility)
+    #[allow(unused_variables)]
     let args: Vec<String> = std::env::args().collect();
     
     #[cfg(feature = "gui")]
