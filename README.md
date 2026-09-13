@@ -24,21 +24,24 @@ Smart file synchronization system that automatically watches a folder and syncs 
    cd orchestrator
    ```
 
-2. **Check dependencies**
+2. **Build the project**
    ```bash
-   python scripts/check-deps.py
-   ```
-
-3. **Build the project**
-   ```bash
+   # Build with GUI support
    cargo build --release --features gui
+
+   # Or build CLI only
+   cargo build --release
    ```
 
-4. **Run first-time setup**
+3. **Initialize configuration**
    ```bash
-   python scripts/start.py
+   ./target/release/fo init
    ```
-   This will prompt for your storage folder path and create the configuration file.
+   Alternatively, copy the example configuration file:
+   ```bash
+   cp config.example.toml config.toml
+   ```
+   Then edit `config.toml` to specify your storage folder path and category rules.
 
 ## Usage
 
