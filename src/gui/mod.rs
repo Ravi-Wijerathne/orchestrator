@@ -64,7 +64,6 @@ pub struct FileOrchestratorApp {
     watcher_running: Arc<Mutex<bool>>,
     watcher_handle: Arc<Mutex<Option<std::process::Child>>>,
     config_path: String,
-    db_path: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -96,7 +95,7 @@ fn card_frame(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) {
     egui::Frame::none()
         .fill(Theme::BG_CARD)
         .rounding(egui::Rounding::same(10.0))
-        .stroke(egui::Stroke::new(1.0, Theme::BORDER))
+        .stroke(egui::Stroke::new(1.0_f32, Theme::BORDER))
         .shadow(egui::epaint::Shadow {
             extrusion: 8.0,
             color: egui::Color32::from_black_alpha(12),
@@ -184,7 +183,6 @@ impl FileOrchestratorApp {
     pub fn new(
         config: Config,
         state_manager: StateManager,
-        db_path: String,
         config_path: String,
     ) -> Self {
         let drive_detector = DriveDetector::new();
@@ -205,7 +203,6 @@ impl FileOrchestratorApp {
             watcher_running: Arc::new(Mutex::new(false)),
             watcher_handle: Arc::new(Mutex::new(None)),
             config_path,
-            db_path,
         }
     }
 
@@ -809,7 +806,7 @@ impl FileOrchestratorApp {
                                     .fill(Theme::BG_BASE)
                                     .rounding(egui::Rounding::same(4.0))
                                     .inner_margin(egui::Margin::symmetric(6.0, 2.0))
-                                    .stroke(egui::Stroke::new(1.0, Theme::BORDER))
+                                    .stroke(egui::Stroke::new(1.0_f32, Theme::BORDER))
                                     .show(ui, |ui| {
                                         ui.label(
                                             egui::RichText::new(*ext)
@@ -844,7 +841,7 @@ impl eframe::App for FileOrchestratorApp {
         style.visuals.widgets.inactive.rounding = egui::Rounding::same(6.0);
         style.visuals.widgets.hovered.rounding = egui::Rounding::same(6.0);
         style.visuals.widgets.active.rounding = egui::Rounding::same(6.0);
-        style.visuals.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, Theme::BORDER);
+        style.visuals.widgets.inactive.bg_stroke = egui::Stroke::new(1.0_f32, Theme::BORDER);
         style.visuals.window_rounding = egui::Rounding::same(10.0);
         style.visuals.override_text_color = Some(Theme::TEXT_PRIMARY);
         ctx.set_style(style);
@@ -945,7 +942,7 @@ impl eframe::App for FileOrchestratorApp {
             .frame(
                 egui::Frame::none()
                     .fill(Theme::BG_CARD)
-                    .stroke(egui::Stroke::new(1.0, Theme::BORDER))
+                    .stroke(egui::Stroke::new(1.0_f32, Theme::BORDER))
                     .inner_margin(egui::Margin::symmetric(16.0, 8.0)),
             )
             .show(ctx, |ui| {
@@ -1055,11 +1052,13 @@ impl eframe::App for FileOrchestratorApp {
 }
 
 pub fn run_gui(config_path: String, db_path: String) -> Result<()> {
-    let config = Config::load_lenient(&config_path)?;
+    let config = Config::load_lenient(&config_path).unwrap_or_else(|e| {
+        eprintln!("Warning: Failed to load config from {}: {}. Using default configuration.", config_path, e);
+        Config::default_config()
+    });
     let state_manager = StateManager::new(&db_path)?;
 
     let config_path_clone = config_path.clone();
-    let db_path_clone = db_path.clone();
 
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
@@ -1078,15 +1077,14 @@ pub fn run_gui(config_path: String, db_path: String) -> Result<()> {
             visuals.window_fill = Theme::BG_CARD;
             visuals.window_rounding = egui::Rounding::same(10.0);
             visuals.widgets.noninteractive.bg_fill = Theme::BG_CARD;
-            visuals.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, Theme::TEXT_PRIMARY);
+            visuals.widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0_f32, Theme::TEXT_PRIMARY);
             visuals.selection.bg_fill = Theme::ACCENT_LIGHT;
-            visuals.selection.stroke = egui::Stroke::new(1.0, Theme::ACCENT);
+            visuals.selection.stroke = egui::Stroke::new(1.0_f32, Theme::ACCENT);
             cc.egui_ctx.set_visuals(visuals);
 
             Box::new(FileOrchestratorApp::new(
                 config,
                 state_manager,
-                db_path_clone,
                 config_path_clone,
             ))
         }),
