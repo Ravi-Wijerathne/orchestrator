@@ -1,16 +1,18 @@
 # File Orchestrator
 
-A smart file synchronization system built in Rust that monitors a storage directory and automatically synchronizes incoming files to designated USB drives based on file categories.
+A smart desktop file synchronization application built in Rust that monitors a storage directory and automatically synchronizes incoming files to designated USB drives based on file categories.
 
 ---
 
 ## Features
 
-- **Automatic File Classification**: Automatically categorizes files (images, videos, music, documents, archives) by MIME type and extensions.
-- **Real-Time Directory Watching**: Detects newly added or modified files instantly.
-- **Smart Queue & Syncing**: Syncs files to matching USB drives as soon as they are plugged in.
-- **Duplicate Prevention**: Uses BLAKE3 cryptographic hashing to track files and avoid duplicate copies.
-- **Modern GUI & Powerful CLI**: Built with `egui` for a responsive desktop interface, plus a full-featured CLI.
+- **Welcome Onboarding Screen**: First-time user friendly landing page guiding you through initial setup.
+- **Modern Graphical Interface**: Clean, responsive desktop dashboard built with `egui`.
+- **Automatic File Classification**: Categorizes files (images, videos, music, documents, archives) by MIME type and extensions.
+- **Real-Time Directory Watching**: Monitor source folders and automatically queue changes.
+- **Drive Manager**: Detect, register, and manage USB drives directly through the visual interface.
+- **Smart Queue & Syncing**: Syncs files to matching USB drives automatically once plugged in.
+- **Duplicate Prevention**: Uses BLAKE3 cryptographic hashing to track files and avoid duplicate transfers.
 - **Cross-Platform**: Works seamlessly on Windows, Linux, and macOS.
 
 ---
@@ -22,15 +24,15 @@ A smart file synchronization system built in Rust that monitors a storage direct
   rustc --version
   cargo --version
   ```
-- **Windows Users**: You must have the MSVC C++ Build Tools installed.
+- **Windows Users**: MSVC C++ Build Tools installed.
   - Download and install [Build Tools for Visual Studio 2019 or later](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
-  - During installation, select the **"Desktop development with C++"** workload to ensure the `link.exe` linker is installed.
+  - During installation, select the **"Desktop development with C++"** workload to ensure `link.exe` is available.
 
 ---
 
 ## Quick Start: Building & Launching
 
-Follow these step-by-step instructions to get File Orchestrator running.
+Follow these steps to build and run File Orchestrator.
 
 ### Step 1: Clone the Repository
 
@@ -41,19 +43,11 @@ cd orchestrator
 
 ### Step 2: Build the Application
 
-You can build with GUI support (recommended) or as a lightweight CLI-only binary:
+Build the release binary with GUI support:
 
-#### Option A: Build with GUI Support (Recommended)
 ```bash
 cargo build --release --features gui
 ```
-*This compiles the binary with both the graphical dashboard and command-line interfaces.*
-
-#### Option B: Build CLI Only
-```bash
-cargo build --release
-```
-*This produces a smaller binary without GUI dependencies.*
 
 > The compiled executable will be located in the `target/release/` directory:
 > - **Windows:** `target\release\fo.exe`
@@ -61,104 +55,60 @@ cargo build --release
 
 ---
 
-### Step 3: Configure (Optional for GUI)
+### Step 3: Launch the GUI
 
-The application relies on `config.toml` to define your monitored directory and USB categories.
+Start the graphical application:
 
-> **Note for GUI users:** If `config.toml` does not exist, the GUI automatically starts with default settings. You can configure folders and drives directly from the **Settings** tab in the GUI!
-
-To manually create and customize your configuration:
-
-1. Generate a default configuration file:
-   ```bash
-   # Windows (PowerShell)
-   .\target\release\fo.exe init
-
-   # Linux / macOS
-   ./target/release/fo init
-   ```
-   *Alternatively, copy the example template:*
-   ```bash
-   cp config.example.toml config.toml
-   ```
-
-2. Edit `config.toml` to specify your monitored folder path (see [Configuration Guide](#configuration-details)).
-
----
-
-### Step 4: Launch the Application
-
-#### 1. Launching the GUI Dashboard
-
-You can start the GUI in either of two ways:
-
-- **Using the compiled binary:**
-  - **Windows (PowerShell / CMD):**
-    ```powershell
-    .\target\release\fo.exe --gui
-    ```
-  - **Linux / macOS:**
-    ```bash
-    ./target/release/fo --gui
-    ```
-
+- **Windows (PowerShell / CMD):**
+  ```powershell
+  .\target\release\fo.exe --gui
+  ```
+- **Linux / macOS:**
+  ```bash
+  ./target/release/fo --gui
+  ```
 - **Directly via Cargo:**
   ```bash
   cargo run --release --features gui -- --gui
   ```
 
-#### 2. Launching CLI Commands
+---
 
-Run commands directly using the binary or via `cargo run`:
+## GUI Overview
 
-- **Check status of watcher, drives, and queue:**
-  ```bash
-  .\target\release\fo.exe status
-  ```
+### 1. Welcome Screen
+- On first launch, the app introduces you to the workflow and helps you get started.
+- Can be revisited anytime from the sidebar navigation.
 
-- **Register a USB drive for a category:**
-  ```bash
-  .\target\release\fo.exe register-drive --label "MyUSB" --category images
-  ```
+### 2. Dashboard
+- View active sync statistics and pending file queues.
+- Monitor real-time connection status of registered drives.
+- Control the background file watcher with **Start Watcher** and **Stop Watcher** buttons.
 
-- **List all registered drives:**
-  ```bash
-  .\target\release\fo.exe list-drives
-  ```
+### 3. Drive Manager
+- View all registered USB drives and their assigned categories.
+- Register new USB drives with custom labels, category mappings (Images, Videos, Music, Documents, Archives), and folder paths via the built-in folder picker.
+- Easily remove drives no longer in use.
 
-- **List currently connected USB drives:**
-  ```bash
-  .\target\release\fo.exe list-connected
-  ```
-
-- **Start continuous background watching & syncing:**
-  ```bash
-  .\target\release\fo.exe run
-  ```
-
-- **Run a single sync pass without continuous watching:**
-  ```bash
-  .\target\release\fo.exe sync-once
-  ```
-
-- **Show all available commands and flags:**
-  ```bash
-  .\target\release\fo.exe --help
-  ```
+### 4. Settings
+- View and update the monitored source directory path using the interactive file browser.
+- Automatically create missing directories with a single click.
+- Inspect supported file extensions and categorization rules.
 
 ---
 
-## Configuration Details
+## Configuration
 
-The `config.toml` file controls how File Orchestrator operates:
+When the GUI starts for the first time without an existing `config.toml`, it automatically creates and loads a default configuration.
+
+You can customize folders and settings directly within the app's **Settings** screen, or manually edit `config.toml`:
 
 ```toml
 [source]
-# The folder to monitor for new files
+# The folder monitored for incoming files
 path = "C:\\Users\\Username\\MainStorage"   # On Linux/macOS: "/home/user/MainStorage"
 
 [rules]
-# File extension categories
 images = ["jpg", "jpeg", "png", "gif", "webp", "svg"]
 videos = ["mp4", "mkv", "avi", "mov", "wmv"]
 music = ["mp3", "flac", "wav", "aac", "ogg"]
@@ -166,10 +116,7 @@ documents = ["pdf", "docx", "xlsx", "pptx", "txt", "md"]
 archives = ["zip", "rar", "7z", "tar", "gz"]
 
 [drives]
-# Drives can be registered via CLI or GUI; they will be listed here:
-# [drives."usb-uuid-here"]
-# label = "Photos Backup"
-# target = "images"
+# Configured USB drives are stored here automatically when registered in the GUI
 ```
 
 ---
@@ -185,25 +132,27 @@ cargo test
 # Run tests with output printed to console
 cargo test -- --nocapture
 
-# Run tests for a specific module
+# Run tests for specific modules
 cargo test classifier
 cargo test config
 cargo test state
 cargo test drive
 cargo test watcher
-cargo test cli
 ```
 
 ---
 
 ## Troubleshooting
 
-- **`Failed to read config file: The system cannot find the file specified`**:
-  Run `.\target\release\fo.exe init` or copy `config.example.toml` to `config.toml`. In the GUI version, this is now handled automatically with a built-in default configuration.
-- **GUI window fails to open**:
-  Ensure you built with `--features gui` (e.g., `cargo build --release --features gui`).
-- **USB drive not detected**:
-  Verify your drive is mounted with a recognized filesystem label or path using `.\target\release\fo.exe list-connected`.
+- **GUI window fails to open:**
+  Ensure the application was built with the `gui` feature enabled:
+  ```bash
+  cargo build --release --features gui
+  ```
+- **Missing Source Path warning:**
+  Navigate to the **Settings** tab in the GUI and use the **Browse...** button to select an existing directory or click **Create This Directory**.
+- **USB drive not detected as connected:**
+  Ensure the drive is properly mounted on your system and that the path or volume label matches what was registered in the **Drive Manager**.
 
 ---
 
