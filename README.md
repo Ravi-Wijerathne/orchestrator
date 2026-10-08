@@ -22,6 +22,9 @@ A smart file synchronization system built in Rust that monitors a storage direct
   rustc --version
   cargo --version
   ```
+- **Windows Users**: You must have the MSVC C++ Build Tools installed.
+  - Download and install [Build Tools for Visual Studio 2019 or later](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+  - During installation, select the **"Desktop development with C++"** workload to ensure the `link.exe` linker is installed.
 
 ---
 
