@@ -68,6 +68,7 @@ pub struct FileOrchestratorApp {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum AppView {
+    Welcome,
     Dashboard,
     DriveManager,
     Settings,
@@ -76,6 +77,7 @@ enum AppView {
 impl AppView {
     fn icon(&self) -> &str {
         match self {
+            AppView::Welcome => "[HI]",
             AppView::Dashboard => "[DB]",
             AppView::DriveManager => "[DR]",
             AppView::Settings => "[ST]",
@@ -83,6 +85,7 @@ impl AppView {
     }
     fn label(&self) -> &str {
         match self {
+            AppView::Welcome => "Welcome",
             AppView::Dashboard => "Dashboard",
             AppView::DriveManager => "Drives",
             AppView::Settings => "Settings",
@@ -188,10 +191,10 @@ impl FileOrchestratorApp {
         let drive_detector = DriveDetector::new();
 
         Self {
+            current_view: if config.drives.is_empty() { AppView::Welcome } else { AppView::Dashboard },
             config: Arc::new(Mutex::new(config)),
             state_manager: Arc::new(Mutex::new(state_manager)),
             drive_detector: Arc::new(Mutex::new(drive_detector)),
-            current_view: AppView::Dashboard,
             pending_count: 0,
             drives_status: Vec::new(),
             new_drive_label: String::new(),
@@ -233,6 +236,91 @@ impl FileOrchestratorApp {
             }
         }
         self.pending_count = total_pending;
+    }
+
+    // ── Welcome ────────────────────────────────────────────────────────
+    fn show_welcome(&mut self, ui: &mut egui::Ui) {
+        ui.add_space(40.0);
+        
+        ui.vertical_centered(|ui| {
+            ui.label(
+                egui::RichText::new("🚀")
+                    .size(60.0)
+            );
+            ui.add_space(20.0);
+            ui.label(
+                egui::RichText::new("Welcome to File Orchestrator")
+                    .size(32.0)
+                    .strong()
+                    .color(Theme::TEXT_PRIMARY)
+            );
+            ui.add_space(10.0);
+            ui.label(
+                egui::RichText::new("Your automated USB file synchronization tool")
+                    .size(16.0)
+                    .color(Theme::TEXT_SECONDARY)
+            );
+        });
+
+        ui.add_space(40.0);
+
+        ui.horizontal(|ui| {
+            ui.add_space((ui.available_width() - 600.0) / 2.0); // Center the cards
+            ui.vertical(|ui| {
+                ui.set_width(600.0);
+                
+                card_frame(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new("Getting Started")
+                            .size(20.0)
+                            .strong()
+                            .color(Theme::ACCENT)
+                    );
+                    ui.add_space(20.0);
+
+                    let steps = [
+                        ("1. Set Source Directory", "Go to Settings and configure where your files are stored locally."),
+                        ("2. Register USB Drives", "Go to the Drive Manager and add your USB drives. Select categories like images, videos, etc."),
+                        ("3. Start File Watcher", "In the Dashboard, start the file watcher to automatically sync files when drives are connected."),
+                    ];
+
+                    for (title, desc) in steps {
+                        ui.horizontal(|ui| {
+                            ui.label(egui::RichText::new("✓").size(18.0).color(Theme::SUCCESS));
+                            ui.add_space(8.0);
+                            ui.vertical(|ui| {
+                                ui.label(egui::RichText::new(title).size(15.0).strong().color(Theme::TEXT_PRIMARY));
+                                ui.add_space(4.0);
+                                ui.label(egui::RichText::new(desc).size(13.0).color(Theme::TEXT_SECONDARY));
+                            });
+                        });
+                        ui.add_space(16.0);
+                    }
+
+                    ui.add_space(10.0);
+                    
+                    ui.vertical_centered(|ui| {
+                        let btn = egui::Button::new(
+                            egui::RichText::new("Get Started ->")
+                                .color(egui::Color32::WHITE)
+                                .size(16.0)
+                                .strong()
+                        )
+                        .fill(Theme::ACCENT)
+                        .rounding(egui::Rounding::same(8.0))
+                        .min_size(egui::vec2(200.0, 44.0));
+
+                        let resp = ui.add(btn);
+                        if resp.hovered() {
+                            ui.painter().rect_filled(resp.rect, 8.0, Theme::ACCENT_HOVER.linear_multiply(0.15));
+                        }
+                        if resp.clicked() {
+                            self.current_view = AppView::Settings;
+                        }
+                    });
+                });
+            });
+        });
     }
 
     // ── Dashboard ──────────────────────────────────────────────────────
@@ -872,7 +960,7 @@ impl eframe::App for FileOrchestratorApp {
                 });
                 ui.add_space(24.0);
 
-                for view in [AppView::Dashboard, AppView::DriveManager, AppView::Settings] {
+                for view in [AppView::Welcome, AppView::Dashboard, AppView::DriveManager, AppView::Settings] {
                     let is_active = self.current_view == view;
                     let text_color = if is_active {
                         Theme::TEXT_NAV_ACTIVE
@@ -1042,6 +1130,7 @@ impl eframe::App for FileOrchestratorApp {
                     .show(ui, |ui| {
                         ui.set_min_width(ui.available_width());
                         match self.current_view {
+                            AppView::Welcome => self.show_welcome(ui),
                             AppView::Dashboard => self.show_dashboard(ui),
                             AppView::DriveManager => self.show_drive_manager(ui),
                             AppView::Settings => self.show_settings(ui),
