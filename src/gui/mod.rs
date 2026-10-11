@@ -6,6 +6,9 @@ use crate::state::StateManager;
 use crate::drive::DriveDetector;
 use crate::error::Result;
 
+mod icons;
+use icons::{AppIcons, render_icon};
+
 // ── Color palette ──────────────────────────────────────────────────────
 struct Theme;
 impl Theme {
@@ -39,6 +42,7 @@ impl Theme {
 }
 
 pub struct FileOrchestratorApp {
+    icons: AppIcons,
     config: Arc<Mutex<Config>>,
     state_manager: Arc<Mutex<StateManager>>,
     drive_detector: Arc<Mutex<DriveDetector>>,
@@ -75,12 +79,12 @@ enum AppView {
 }
 
 impl AppView {
-    fn icon(&self) -> &str {
+    fn icon<'a>(&self, icons: &'a AppIcons) -> &'a egui::TextureHandle {
         match self {
-            AppView::Welcome => "[HI]",
-            AppView::Dashboard => "[DB]",
-            AppView::DriveManager => "[DR]",
-            AppView::Settings => "[ST]",
+            AppView::Welcome => &icons.nav_welcome,
+            AppView::Dashboard => &icons.nav_dashboard,
+            AppView::DriveManager => &icons.nav_drives,
+            AppView::Settings => &icons.nav_settings,
         }
     }
     fn label(&self) -> &str {
@@ -110,9 +114,10 @@ fn card_frame(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) {
         });
 }
 
-fn section_heading(ui: &mut egui::Ui, icon: &str, title: &str) {
+fn section_heading(ui: &mut egui::Ui, icon: &egui::TextureHandle, title: &str) {
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(icon).size(18.0));
+        render_icon(ui, icon, 24.0);
+        ui.add_space(8.0);
         ui.label(
             egui::RichText::new(title)
                 .size(18.0)
@@ -187,10 +192,12 @@ impl FileOrchestratorApp {
         config: Config,
         state_manager: StateManager,
         config_path: String,
+        icons: AppIcons,
     ) -> Self {
         let drive_detector = DriveDetector::new();
 
         Self {
+            icons,
             current_view: if config.drives.is_empty() { AppView::Welcome } else { AppView::Dashboard },
             config: Arc::new(Mutex::new(config)),
             state_manager: Arc::new(Mutex::new(state_manager)),
@@ -240,14 +247,11 @@ impl FileOrchestratorApp {
 
     // ── Welcome ────────────────────────────────────────────────────────
     fn show_welcome(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(40.0);
+        ui.add_space(30.0);
         
         ui.vertical_centered(|ui| {
-            ui.label(
-                egui::RichText::new("🚀")
-                    .size(60.0)
-            );
-            ui.add_space(20.0);
+            render_icon(ui, &self.icons.logo, 88.0);
+            ui.add_space(16.0);
             ui.label(
                 egui::RichText::new("Welcome to File Orchestrator")
                     .size(32.0)
@@ -262,7 +266,7 @@ impl FileOrchestratorApp {
             );
         });
 
-        ui.add_space(40.0);
+        ui.add_space(36.0);
 
         ui.horizontal(|ui| {
             ui.add_space((ui.available_width() - 600.0) / 2.0); // Center the cards
@@ -270,24 +274,28 @@ impl FileOrchestratorApp {
                 ui.set_width(600.0);
                 
                 card_frame(ui, |ui| {
-                    ui.label(
-                        egui::RichText::new("Getting Started")
-                            .size(20.0)
-                            .strong()
-                            .color(Theme::ACCENT)
-                    );
+                    ui.horizontal(|ui| {
+                        render_icon(ui, &self.icons.nav_welcome, 22.0);
+                        ui.add_space(8.0);
+                        ui.label(
+                            egui::RichText::new("Getting Started")
+                                .size(20.0)
+                                .strong()
+                                .color(Theme::ACCENT)
+                        );
+                    });
                     ui.add_space(20.0);
 
                     let steps = [
-                        ("1. Set Source Directory", "Go to Settings and configure where your files are stored locally."),
-                        ("2. Register USB Drives", "Go to the Drive Manager and add your USB drives. Select categories like images, videos, etc."),
-                        ("3. Start File Watcher", "In the Dashboard, start the file watcher to automatically sync files when drives are connected."),
+                        (&self.icons.folder, "1. Set Source Directory", "Go to Settings and configure where your files are stored locally."),
+                        (&self.icons.nav_drives, "2. Register USB Drives", "Go to the Drive Manager and add your USB drives. Select categories like images, videos, etc."),
+                        (&self.icons.watcher, "3. Start File Watcher", "In the Dashboard, start the file watcher to automatically sync files when drives are connected."),
                     ];
 
-                    for (title, desc) in steps {
+                    for (icon, title, desc) in steps {
                         ui.horizontal(|ui| {
-                            ui.label(egui::RichText::new("✓").size(18.0).color(Theme::SUCCESS));
-                            ui.add_space(8.0);
+                            render_icon(ui, icon, 24.0);
+                            ui.add_space(12.0);
                             ui.vertical(|ui| {
                                 ui.label(egui::RichText::new(title).size(15.0).strong().color(Theme::TEXT_PRIMARY));
                                 ui.add_space(4.0);
@@ -325,7 +333,7 @@ impl FileOrchestratorApp {
 
     // ── Dashboard ──────────────────────────────────────────────────────
     fn show_dashboard(&mut self, ui: &mut egui::Ui) {
-        section_heading(ui, "[DB]", "Dashboard");
+        section_heading(ui, &self.icons.nav_dashboard, "Dashboard");
         ui.add_space(8.0);
 
         // Stat cards row
@@ -352,7 +360,8 @@ impl FileOrchestratorApp {
         // Drive status card
         card_frame(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("[DR]").size(16.0));
+                render_icon(ui, &self.icons.nav_drives, 20.0);
+                ui.add_space(8.0);
                 ui.label(
                     egui::RichText::new("Drive Status")
                         .size(15.0)
@@ -426,7 +435,8 @@ impl FileOrchestratorApp {
             let is_running = *self.watcher_running.lock().unwrap();
 
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("[FW]").size(16.0));
+                render_icon(ui, &self.icons.watcher, 20.0);
+                ui.add_space(8.0);
                 ui.label(
                     egui::RichText::new("File Watcher")
                         .size(15.0)
@@ -464,24 +474,28 @@ impl FileOrchestratorApp {
 
     // ── Drive Manager ──────────────────────────────────────────────────
     fn show_drive_manager(&mut self, ui: &mut egui::Ui) {
-        section_heading(ui, "[DR]", "Drive Manager");
+        section_heading(ui, &self.icons.nav_drives, "Drive Manager");
         ui.add_space(8.0);
 
         // Registered drives card
         card_frame(ui, |ui| {
-            ui.label(
-                egui::RichText::new("Registered Drives")
-                    .size(15.0)
-                    .strong()
-                    .color(Theme::TEXT_PRIMARY),
-            );
+            ui.horizontal(|ui| {
+                render_icon(ui, &self.icons.nav_drives, 20.0);
+                ui.add_space(8.0);
+                ui.label(
+                    egui::RichText::new("Registered Drives")
+                        .size(15.0)
+                        .strong()
+                        .color(Theme::TEXT_PRIMARY),
+                );
+            });
             ui.add_space(12.0);
 
             let config = self.config.lock().unwrap();
             if config.drives.is_empty() {
                 ui.add_space(20.0);
                 ui.vertical_centered(|ui| {
-                    ui.label(egui::RichText::new("[--]").size(24.0));
+                    render_icon(ui, &self.icons.nav_drives, 44.0);
                     ui.add_space(8.0);
                     ui.label(
                         egui::RichText::new("No drives registered yet")
@@ -511,9 +525,9 @@ impl FileOrchestratorApp {
                         .show(ui, |ui| {
                             ui.set_min_width(ui.available_width());
                             ui.horizontal(|ui| {
-                                // Drive icon
-                                ui.label(egui::RichText::new("[DR]").size(18.0));
-                                ui.add_space(8.0);
+                                // Drive category icon
+                                render_icon(ui, self.icons.category_icon(&drive_config.target), 32.0);
+                                ui.add_space(10.0);
                                 ui.vertical(|ui| {
                                     ui.label(
                                         egui::RichText::new(&drive_config.label)
@@ -558,12 +572,16 @@ impl FileOrchestratorApp {
 
         // Add new drive card
         card_frame(ui, |ui| {
-            ui.label(
-                egui::RichText::new("+ Add New Drive")
-                    .size(15.0)
-                    .strong()
-                    .color(Theme::TEXT_PRIMARY),
-            );
+            ui.horizontal(|ui| {
+                render_icon(ui, &self.icons.nav_drives, 20.0);
+                ui.add_space(8.0);
+                ui.label(
+                    egui::RichText::new("Register New Drive")
+                        .size(15.0)
+                        .strong()
+                        .color(Theme::TEXT_PRIMARY),
+                );
+            });
             ui.add_space(16.0);
 
             // Form grid
@@ -747,7 +765,7 @@ impl FileOrchestratorApp {
 
     // ── Settings ───────────────────────────────────────────────────────
     fn show_settings(&mut self, ui: &mut egui::Ui) {
-        section_heading(ui, "[ST]", "Settings");
+        section_heading(ui, &self.icons.nav_settings, "Settings");
         ui.add_space(8.0);
 
         let source_exists = self.config.lock().unwrap().source.path.exists();
@@ -756,7 +774,8 @@ impl FileOrchestratorApp {
         // Source directory card
         card_frame(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("[DIR]").size(16.0));
+                render_icon(ui, &self.icons.folder, 20.0);
+                ui.add_space(8.0);
                 ui.label(
                     egui::RichText::new("Source Directory")
                         .size(15.0)
@@ -850,7 +869,8 @@ impl FileOrchestratorApp {
         let config = self.config.lock().unwrap();
         card_frame(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("[RULES]").size(16.0));
+                render_icon(ui, &self.icons.rules, 20.0);
+                ui.add_space(8.0);
                 ui.label(
                     egui::RichText::new("File Classification Rules")
                         .size(15.0)
@@ -860,17 +880,17 @@ impl FileOrchestratorApp {
             });
             ui.add_space(12.0);
 
-            let rules: Vec<(&str, &str, Vec<&str>)> = {
+            let rules: Vec<(&egui::TextureHandle, &str, Vec<&str>)> = {
                 let mut r = vec![
-                    ("IMG", "Images", config.rules.images.iter().map(|s| s.as_str()).collect()),
-                    ("VID", "Videos", config.rules.videos.iter().map(|s| s.as_str()).collect()),
-                    ("AUD", "Music", config.rules.music.iter().map(|s| s.as_str()).collect()),
+                    (&self.icons.cat_images, "Images", config.rules.images.iter().map(|s| s.as_str()).collect()),
+                    (&self.icons.cat_videos, "Videos", config.rules.videos.iter().map(|s| s.as_str()).collect()),
+                    (&self.icons.cat_music, "Music", config.rules.music.iter().map(|s| s.as_str()).collect()),
                 ];
                 if let Some(docs) = &config.rules.documents {
-                    r.push(("DOC", "Documents", docs.iter().map(|s| s.as_str()).collect()));
+                    r.push((&self.icons.cat_docs, "Documents", docs.iter().map(|s| s.as_str()).collect()));
                 }
                 if let Some(archives) = &config.rules.archives {
-                    r.push(("ARC", "Archives", archives.iter().map(|s| s.as_str()).collect()));
+                    r.push((&self.icons.cat_archives, "Archives", archives.iter().map(|s| s.as_str()).collect()));
                 }
                 r
             };
@@ -881,7 +901,7 @@ impl FileOrchestratorApp {
                 .striped(true)
                 .show(ui, |ui| {
                     for (icon, category, extensions) in &rules {
-                        ui.label(egui::RichText::new(*icon).size(16.0));
+                        render_icon(ui, icon, 22.0);
                         ui.label(
                             egui::RichText::new(*category)
                                 .size(13.0)
@@ -937,25 +957,32 @@ impl eframe::App for FileOrchestratorApp {
         // ── Left sidebar navigation ────────────────────────────────────
         egui::SidePanel::left("nav_panel")
             .resizable(false)
-            .exact_width(180.0)
+            .exact_width(190.0)
             .frame(
                 egui::Frame::none()
                     .fill(Theme::BG_SIDEBAR)
                     .inner_margin(egui::Margin {
-                        left: 0.0,
-                        right: 0.0,
-                        top: 0.0,
-                        bottom: 0.0,
+                        left: 12.0,
+                        right: 12.0,
+                        top: 20.0,
+                        bottom: 16.0,
                     }),
             )
             .show(ctx, |ui| {
-                ui.add_space(20.0);
                 ui.vertical_centered(|ui| {
+                    render_icon(ui, &self.icons.logo, 52.0);
+                    ui.add_space(8.0);
                     ui.label(
                         egui::RichText::new("File Orchestrator")
                             .size(15.0)
                             .strong()
                             .color(Theme::TEXT_NAV_ACTIVE),
+                    );
+                    ui.add_space(2.0);
+                    ui.label(
+                        egui::RichText::new("v0.1.0")
+                            .size(11.0)
+                            .color(Theme::TEXT_SECONDARY),
                     );
                 });
                 ui.add_space(24.0);
@@ -967,61 +994,53 @@ impl eframe::App for FileOrchestratorApp {
                     } else {
                         Theme::TEXT_ON_DARK
                     };
+
+                    let (rect, resp) = ui.allocate_exact_size(
+                        egui::vec2(ui.available_width(), 42.0),
+                        egui::Sense::click(),
+                    );
+
                     let bg = if is_active {
                         Theme::ACCENT
+                    } else if resp.hovered() {
+                        Theme::BG_NAV_HOVER
                     } else {
                         egui::Color32::TRANSPARENT
                     };
 
-                    let btn = egui::Frame::none()
-                        .fill(bg)
-                        .rounding(egui::Rounding::same(8.0))
-                        .inner_margin(egui::Margin::symmetric(16.0, 10.0))
-                        .show(ui, |ui| {
-                            ui.set_min_width(ui.available_width());
-                            ui.horizontal(|ui| {
-                                ui.label(
-                                    egui::RichText::new(view.icon())
-                                        .size(16.0)
-                                        .color(text_color),
-                                );
-                                ui.add_space(8.0);
-                                ui.label(
-                                    egui::RichText::new(view.label())
-                                        .size(14.0)
-                                        .color(text_color),
-                                );
-                            });
-                        });
-
-                    let resp = ui.interact(
-                        btn.response.rect,
-                        ui.id().with(view.label()),
-                        egui::Sense::click(),
-                    );
-                    if resp.hovered() && !is_active {
-                        ui.painter().rect_filled(
-                            btn.response.rect,
-                            8.0,
-                            Theme::BG_NAV_HOVER,
-                        );
-                        // Re-draw text on top of hover bg
-                        let text_rect = btn.response.rect;
-                        ui.painter().text(
-                            text_rect.left_center() + egui::vec2(16.0, 0.0),
-                            egui::Align2::LEFT_CENTER,
-                            format!("{}   {}", view.icon(), view.label()),
-                            egui::FontId::proportional(14.0),
-                            Theme::TEXT_ON_DARK,
-                        );
+                    if bg != egui::Color32::TRANSPARENT {
+                        ui.painter().rect_filled(rect, 8.0, bg);
                     }
+
+                    // Draw icon
+                    let icon_rect = egui::Rect::from_center_size(
+                        egui::pos2(rect.left() + 22.0, rect.center().y),
+                        egui::vec2(22.0, 22.0),
+                    );
+                    let mut mesh = egui::Mesh::with_texture(view.icon(&self.icons).id());
+                    mesh.add_rect_with_uv(
+                        icon_rect,
+                        egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                        egui::Color32::WHITE,
+                    );
+                    ui.painter().add(egui::Shape::mesh(mesh));
+
+                    // Draw label
+                    ui.painter().text(
+                        egui::pos2(rect.left() + 42.0, rect.center().y),
+                        egui::Align2::LEFT_CENTER,
+                        view.label(),
+                        egui::FontId::proportional(14.0),
+                        text_color,
+                    );
+
                     if resp.clicked() {
                         self.current_view = view;
                         if view == AppView::Dashboard {
                             self.update_dashboard_stats();
                         }
                     }
-                    ui.add_space(2.0);
+                    ui.add_space(4.0);
                 }
             });
 
@@ -1149,10 +1168,16 @@ pub fn run_gui(config_path: String, db_path: String) -> Result<()> {
 
     let config_path_clone = config_path.clone();
 
+    let mut viewport = egui::ViewportBuilder::default()
+        .with_inner_size([1050.0, 720.0])
+        .with_min_inner_size([850.0, 600.0]);
+
+    if let Some(icon) = icons::load_window_icon() {
+        viewport = viewport.with_icon(icon);
+    }
+
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1050.0, 720.0])
-            .with_min_inner_size([850.0, 600.0]),
+        viewport,
         ..Default::default()
     };
 
@@ -1171,10 +1196,12 @@ pub fn run_gui(config_path: String, db_path: String) -> Result<()> {
             visuals.selection.stroke = egui::Stroke::new(1.0_f32, Theme::ACCENT);
             cc.egui_ctx.set_visuals(visuals);
 
+            let icons = AppIcons::new(&cc.egui_ctx);
             Box::new(FileOrchestratorApp::new(
                 config,
                 state_manager,
                 config_path_clone,
+                icons,
             ))
         }),
     )
