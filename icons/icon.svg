@@ -1,4 +1,51 @@
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#2196f3"/>
-  <text x="256" y="310" font-family="Arial" font-size="180" fill="white" text-anchor="middle" font-weight="bold">FO</text>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="folderGrad" x1="100" y1="120" x2="420" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+    <linearGradient id="syncGrad" x1="160" y1="150" x2="350" y2="350" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="100%" stop-color="#60a5fa" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background container -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <rect x="4" y="4" width="504" height="504" rx="108" stroke="#38bdf8" stroke-opacity="0.3" stroke-width="4" />
+
+  <!-- Glowing folder icon -->
+  <g filter="url(#glow)">
+    <!-- Back folder tab -->
+    <path d="M128 176C128 162.745 138.745 152 152 152H220C229.474 152 238.358 156.634 243.68 164.408L257.653 184.816C262.975 192.59 271.86 197.224 281.333 197.224H360C373.255 197.224 384 207.969 384 221.224V336C384 349.255 373.255 360 360 360H152C138.745 360 128 349.255 128 336V176Z" fill="#1e293b" fill-opacity="0.6" stroke="#38bdf8" stroke-width="6" />
+    
+    <!-- Front folder flap -->
+    <path d="M112 232C112 218.745 122.745 208 136 208H376C389.255 208 400 218.745 400 232L388 360C388 373.255 377.255 384 364 384H148C134.745 384 124 373.255 124 360L112 232Z" fill="url(#folderGrad)" fill-opacity="0.25" stroke="#38bdf8" stroke-width="6" />
+  </g>
+
+  <!-- Sync circle arrows -->
+  <g filter="url(#glow)">
+    <path d="M256 160C202.981 160 160 202.981 160 256C160 274.526 165.253 291.821 174.348 306.5" stroke="url(#syncGrad)" stroke-width="12" stroke-linecap="round" />
+    <path d="M152 306H176V282" stroke="url(#syncGrad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+
+    <path d="M256 352C309.019 352 352 309.019 352 256C352 237.474 346.747 220.179 337.652 205.5" stroke="url(#syncGrad)" stroke-width="12" stroke-linecap="round" />
+    <path d="M360 206H336V230" stroke="url(#syncGrad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- USB connector glyph -->
+  <g transform="translate(256, 256)">
+    <rect x="-18" y="-28" width="36" height="56" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="6" />
+    <path d="M-10 -12H-6V0H-10Z" fill="#38bdf8" />
+    <path d="M6 -12H10V0H6Z" fill="#38bdf8" />
+    <circle cx="0" cy="14" r="4" fill="#a78bfa" />
+  </g>
 </svg>

@@ -1200,6 +1200,7 @@ dependencies = [
  "eframe",
  "egui",
  "futures",
+ "image",
  "infer",
  "mime_guess",
  "notify",
